@@ -297,6 +297,7 @@ local function performAutoTeleport()
     -- Если все объекты уже обработаны, очищаем список и начинаем заново
     if not targetToTeleport then
         teleportedObjects = {}
+        -- Берем первый объект из списка
         if #targets > 0 then
             targetToTeleport = targets[1].object
         else
@@ -338,7 +339,7 @@ local function startAutoCollect()
         
         local targets = findAllTargetPrompts()
         if #targets == 0 then 
-            teleportedObjects = {}
+            teleportedObjects = {} -- Сбрасываем список при отсутствии целей
             return 
         end
         
