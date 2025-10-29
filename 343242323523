@@ -1,3 +1,4 @@
+-- Nexus Script v1.0.0
 -- Load libraries
 local Library = loadstring(game:HttpGetAsync("https://github.com/ActualMasterOogway/Fluent-Renewed/releases/latest/download/Fluent.luau"))()
 local SaveManager = loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/ActualMasterOogway/Fluent-Renewed/master/Addons/SaveManager.luau"))()
@@ -263,10 +264,10 @@ local function performAutoTeleport()
     
     local targets = findAllTargetPrompts()
     
-    local objectsToRemove = {}
+    -- Очищаем список телепортированных объектов, которые больше не существуют
     for targetObject, _ in pairs(teleportedObjects) do
         if not targetObject or not targetObject.Parent then
-            table.insert(objectsToRemove, targetObject)
+            teleportedObjects[targetObject] = nil
         else
             local objectStillExists = false
             for _, targetData in ipairs(targets) do
@@ -276,13 +277,9 @@ local function performAutoTeleport()
                 end
             end
             if not objectStillExists then
-                table.insert(objectsToRemove, targetObject)
+                teleportedObjects[targetObject] = nil
             end
         end
-    end
-    
-    for _, targetObject in ipairs(objectsToRemove) do
-        teleportedObjects[targetObject] = nil
     end
     
     if #targets == 0 then 
@@ -290,26 +287,32 @@ local function performAutoTeleport()
         return false
     end
     
-    local availableTargets = {}
+    -- Находим первый объект, к которому еще не телепортировались
+    local targetToTeleport = nil
     for _, targetData in ipairs(targets) do
         if not teleportedObjects[targetData.object] then
-            table.insert(availableTargets, targetData)
+            targetToTeleport = targetData.object
+            break
         end
     end
     
-    if #availableTargets > 0 then
-        local targetData = availableTargets[1]
-        local targetToTeleport = targetData.object
-        
-        local teleportSuccess = teleportToTarget(targetToTeleport)
-        
-        if teleportSuccess then
-            teleportedObjects[targetToTeleport] = true
-            lastTeleportTime = currentTime
-            return true
-        end
-    else
+    -- Если все объекты уже обработаны, очищаем список и начинаем заново
+    if not targetToTeleport then
         teleportedObjects = {}
+        if #targets > 0 then
+            targetToTeleport = targets[1].object
+        else
+            return false
+        end
+    end
+    
+    -- Телепортируемся к выбранному объекту
+    local teleportSuccess = teleportToTarget(targetToTeleport)
+    
+    if teleportSuccess then
+        teleportedObjects[targetToTeleport] = true
+        lastTeleportTime = currentTime
+        return true
     end
     
     return false
@@ -336,7 +339,10 @@ local function startAutoCollect()
         if not hrp then return end
         
         local targets = findAllTargetPrompts()
-        if #targets == 0 then return end
+        if #targets == 0 then 
+            teleportedObjects = {}
+            return 
+        end
         
         if AUTO_TELEPORT_ENABLED then
             performAutoTeleport()
