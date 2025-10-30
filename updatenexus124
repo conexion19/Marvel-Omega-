@@ -100,7 +100,7 @@ mobileToggleButton.Size = UDim2.new(0, 60, 0, 60)
 mobileToggleButton.Position = UDim2.new(1, -70, 0.5, -30)
 mobileToggleButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 mobileToggleButton.Text = "N"
-mobileToggleButton.TextColor3 = Color3.fromRGB(255, 255, 0)
+mobileToggleButton.TextColor3 = Color3.fromRGB(255, 255,255)
 mobileToggleButton.Font = Enum.Font.GothamBold  -- Менее жирный чем GothamBlack
 mobileToggleButton.TextSize = 32
 mobileToggleButton.TextStrokeTransparency = 0.5  -- Полупрозрачная обводка
@@ -110,7 +110,7 @@ mobileToggleButton.Parent = mobileToggleGui
     
     -- Скругленные углы
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 12)
+    corner.CornerRadius = UDim.new(0, 20)
     corner.Parent = mobileToggleButton
     
     -- Белая обводка
@@ -826,7 +826,7 @@ local function initializeGUI()
     _G.NexusGUIInitialized = true
     
     -- Определяем размер окна в зависимости от устройства
-    local windowSize = IS_MOBILE and UDim2.fromOffset(450, 310) or UDim2.fromOffset(500, 310)
+    local windowSize = IS_MOBILE and UDim2.fromOffset(450, 270) or UDim2.fromOffset(500, 310)
     
     local Window = Library:CreateWindow({
         Title = "Nexus v1.0.0",
