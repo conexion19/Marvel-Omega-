@@ -83,13 +83,13 @@ local function createMobileToggleButton()
     
     -- Скругленные углы
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 24)
+    corner.CornerRadius = UDim.new(0, 12)
     corner.Parent = mobileToggleButton
     
     -- Белая обводка
     local stroke = Instance.new("UIStroke")
     stroke.Color = Color3.fromRGB(255, 255, 255)
-    stroke.Thickness = 1
+    stroke.Thickness = 2
     stroke.Parent = mobileToggleButton
     
     -- Анимация при нажатии
@@ -450,7 +450,6 @@ local function performAutoTeleport()
             print(string.format("Телепортация к новому объекту. Посещено: %d/%d", visitedObjects + 1, totalObjects))
             
             -- Активируем промпт после телепортации
-            task.wait(0.3)
             local prompt = availableTargets[1].prompt
             if prompt and prompt.Enabled then
                 fireProximity(prompt)
@@ -539,8 +538,8 @@ local function processAllAutoFarmObjects()
     
     local targets = findAllTargetPrompts()
     if #targets == 0 then 
-        -- Если объектов нет, очищаем историю
-        autoFarmProcessedObjects = {}
+        -- Если объектов нет, ждем и продолжаем цикл
+        task.wait(AUTO_FARM_CHECK_INTERVAL)
         return false
     end
     
@@ -553,16 +552,9 @@ local function processAllAutoFarmObjects()
     end
     
     if #validTargets == 0 then
-        -- Если нет валидных целей, очищаем историю
-        autoFarmProcessedObjects = {}
+        -- Если нет валидных целей, ждем и продолжаем цикл
+        task.wait(AUTO_FARM_CHECK_INTERVAL)
         return false
-    end
-    
-    -- Очищаем историю от объектов, которых больше нет в Workspace
-    for targetObject, _ in pairs(autoFarmProcessedObjects) do
-        if not targetObject or not targetObject.Parent then
-            autoFarmProcessedObjects[targetObject] = nil
-        end
     end
     
     local character = LocalPlayer.Character
@@ -570,18 +562,14 @@ local function processAllAutoFarmObjects()
     
     local processedInThisCycle = false
     
-    -- Телепортируемся ко всем найденным объектам
+    -- Телепортируемся ко всем найденным объектам по очереди
     for _, targetData in ipairs(validTargets) do
         if not autoFarmIsActive then break end
         
         local targetToTeleport = targetData.object
         local prompt = targetData.prompt
 
-        -- Пропускаем объекты, которые уже обрабатывались и все еще существуют
-        if autoFarmProcessedObjects[targetToTeleport] then
-            continue
-        end
-
+        -- Телепортируемся к объекту
         local teleportSuccess = teleportToTarget(targetToTeleport)
         
         if teleportSuccess then
@@ -591,23 +579,20 @@ local function processAllAutoFarmObjects()
             if prompt and prompt.Enabled then
                 for i = 1, 3 do
                     fireProximity(prompt)
-                    task.wait(0.3)
+                    
                 end
             end
             
-            -- Добавляем в историю только если объект все еще существует
-            if targetToTeleport and targetToTeleport.Parent then
-                autoFarmProcessedObjects[targetToTeleport] = true
-            end
-            
-            task.wait(AUTO_FARM_TELEPORT_DELAY)
+            -- Ждем 0.5 секунды у объекта
+            task.wait(0.5)
         end
     end
     
     -- После телепортации ко всем объектам возвращаемся в нулевые координаты
     if processedInThisCycle then
-        task.wait(AUTO_FARM_RETURN_DELAY)
         returnToZero()
+        -- Ждем 0.5 секунды в нулевых координатах перед следующим циклом
+        task.wait(0.5)
         return true
     end
     
@@ -615,15 +600,18 @@ local function processAllAutoFarmObjects()
 end
 
 local function startAutoFarmCycle()
+    -- Начальная телепортация в нулевые координаты
     returnToZero()
     task.wait(2)
     
+    -- Бесконечный цикл
     while true do
         if not autoFarmIsActive then
             task.wait(1)
         else
             processAllAutoFarmObjects()
-            task.wait(AUTO_FARM_CHECK_INTERVAL)
+            -- Короткая пауза между циклами
+            task.wait(0.1)
         end
     end
 end
@@ -631,6 +619,7 @@ end
 local function initializeAutoFarm()
     task.spawn(startAutoFarmCycle)
 end
+
 -- Movement functions - ИСПРАВЛЕННЫЕ
 local function updateNoClip()
     if noclipConnection then
