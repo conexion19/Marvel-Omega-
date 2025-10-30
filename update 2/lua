@@ -756,7 +756,7 @@ local function initializeGUI()
     _G.NexusGUIInitialized = true
     
     -- Определяем размер окна в зависимости от устройства
-    local windowSize = IS_MOBILE and UDim2.fromOffset(490, 250) or UDim2.fromOffset(500, 310)
+    local windowSize = IS_MOBILE and UDim2.fromOffset(420, 280) or UDim2.fromOffset(500, 310)
     
     local Window = Library:CreateWindow({
         Title = "Nexus v1.0.0",
