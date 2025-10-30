@@ -201,7 +201,7 @@ local function createMobileFlyControls()
             joystickCenter.Position = UDim2.new(0.5, -20 + offsetX, 0.5, -20 + offsetY)
             
             -- Определяем направление движения с мертвой зоной
-            local deadZone = 10
+            local deadZone = 23
             
             -- Только горизонтальное движение (без изменения высоты)
             mobileFlyControls.forward = (offsetY < -deadZone)
