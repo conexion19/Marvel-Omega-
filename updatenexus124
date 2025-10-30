@@ -189,7 +189,7 @@ local function createMobileFlyControls()
         end
     end)
     
-    UIS.InputChanged:Connect(function(input)
+    game:GetService("UserInputService").InputChanged:Connect(function(input)
         if joystickActive and input.UserInputType == Enum.UserInputType.Touch and FLY_ENABLED then
             local delta = (input.Position - joystickStart)
             local maxDistance = 60 -- Увеличен максимальный радиус (было 30)
@@ -262,11 +262,17 @@ end
 
 -- Функция показа/скрытия мобильного управления полетом
 local function toggleMobileFlyControls(visible)
-    if mobileJoystick and upArrow and downArrow then
-        mobileJoystick.Visible = visible
-        upArrow.Visible = visible
-        downArrow.Visible = visible
+    if flyControlsGui then
         flyControlsGui.Enabled = visible
+    end
+    if mobileJoystick then
+        mobileJoystick.Visible = visible
+    end
+    if upArrow then
+        upArrow.Visible = visible
+    end
+    if downArrow then
+        downArrow.Visible = visible
     end
 end
 
@@ -280,7 +286,7 @@ local function createEyeToggleButton()
     eyeToggleButton = Instance.new("TextButton")
     eyeToggleButton.Name = "EyeToggleButton"
     eyeToggleButton.Size = UDim2.new(0, 60, 0, 60)
-    eyeToggleButton.Position = mobileToggleButton.Position -- Та же позиция что и у кнопки N
+    eyeToggleButton.Position = mobileToggleButton and mobileToggleButton.Position or UDim2.new(0.6, -30, 0, 20)
     eyeToggleButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
     eyeToggleButton.Text = "👁"
     eyeToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -305,13 +311,15 @@ local function createEyeToggleButton()
     
     -- Обработчик клика для глазка
     eyeToggleButton.MouseButton1Click:Connect(function()
-        toggleMobileInterface()
+        if toggleMobileInterface then
+            toggleMobileInterface()
+        end
     end)
     
     -- Анимация при нажатии
     eyeToggleButton.MouseButton1Down:Connect(function()
         local tweenInfo = TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-        local tween = TweenService:Create(eyeToggleButton, tweenInfo, {
+        local tween = game:GetService("TweenService"):Create(eyeToggleButton, tweenInfo, {
             Size = UDim2.new(0, 55, 0, 55),
             BackgroundColor3 = Color3.fromRGB(20, 20, 20)
         })
@@ -320,7 +328,7 @@ local function createEyeToggleButton()
     
     eyeToggleButton.MouseButton1Up:Connect(function()
         local tweenInfo = TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-        local tween = TweenService:Create(eyeToggleButton, tweenInfo, {
+        local tween = game:GetService("TweenService"):Create(eyeToggleButton, tweenInfo, {
             Size = UDim2.new(0, 60, 0, 60),
             BackgroundColor3 = Color3.fromRGB(0, 0, 0)
         })
@@ -372,6 +380,9 @@ local function createMobileToggleButton()
     local pressStartTime = 0
     local isLongPress = false
     
+    local UIS = game:GetService("UserInputService")
+    local TweenService = game:GetService("TweenService")
+    
     -- Функция начала перемещения (только для touch)
     local function startDrag(input)
         if input.UserInputType == Enum.UserInputType.Touch then
@@ -403,7 +414,9 @@ local function createMobileToggleButton()
         elseif input.UserInputType == Enum.UserInputType.MouseButton1 then
             -- Если это было короткое нажатие (не долгое) - переключаем интерфейс
             if not isLongPress and (tick() - pressStartTime) < 0.5 then
-                toggleMobileInterface()
+                if toggleMobileInterface then
+                    toggleMobileInterface()
+                end
             end
             isLongPress = false
         end
@@ -414,10 +427,10 @@ local function createMobileToggleButton()
         if isDragging and input.UserInputType == Enum.UserInputType.Touch then
             local delta = input.Position - dragStart
             
-            local newX = math.clamp(buttonStart.X.Offset + delta.X, 0, mobileToggleButton.AbsoluteSize.X)
-            local newY = math.clamp(buttonStart.Y.Offset + delta.Y, 0, mobileToggleButton.AbsoluteSize.Y)
+            local newX = math.clamp(buttonStart.X.Offset + delta.X, 0, game:GetService("CoreGui").AbsoluteSize.X - mobileToggleButton.AbsoluteSize.X)
+            local newY = math.clamp(buttonStart.Y.Offset + delta.Y, 0, game:GetService("CoreGui").AbsoluteSize.Y - mobileToggleButton.AbsoluteSize.Y)
             
-            mobileToggleButton.Position = UDim2.new(buttonStart.X.Scale, newX, buttonStart.Y.Scale, newY)
+            mobileToggleButton.Position = UDim2.new(0, newX, 0, newY)
         end
     end)
     
@@ -473,11 +486,13 @@ local function createMobileToggleButton()
             if eyeToggleButton then
                 eyeToggleButton.Position = mobileToggleButton.Position
             end
-            Library:Notify({
-                Title = "Nexus Mobile",
-                Content = "Button position reset",
-                Duration = 2
-            })
+            if Library and Library.Notify then
+                Library:Notify({
+                    Title = "Nexus Mobile",
+                    Content = "Button position reset",
+                    Duration = 2
+                })
+            end
         end
         lastTapTime = currentTime
     end)
