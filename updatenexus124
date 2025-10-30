@@ -60,7 +60,6 @@ local flyKeys = {
     Up = false, Down = false 
 }
 
--- Мобильное управление полетом
 local mobileFlyControls = {
     forward = false,
     backward = false,
@@ -85,45 +84,46 @@ local function createMobileFlyControls()
     flyControlsGui.Enabled = false -- Изначально выключен
     flyControlsGui.Parent = game:GetService("CoreGui")
     
-    -- Джойстик для горизонтального движения
+    -- Джойстик для горизонтального движения (в 2 раза больше и прозрачный)
     mobileJoystick = Instance.new("Frame")
     mobileJoystick.Name = "MobileJoystick"
-    mobileJoystick.Size = UDim2.new(0, 120, 0, 120)
-    mobileJoystick.Position = UDim2.new(0, 50, 1, -180)
+    mobileJoystick.Size = UDim2.new(0, 240, 0, 240) -- Увеличен в 2 раза (было 120x120)
+    mobileJoystick.Position = UDim2.new(0, 80, 1, -300) -- Смещен вниз и левее (было 50, -180)
     mobileJoystick.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    mobileJoystick.BackgroundTransparency = 0.4
+    mobileJoystick.BackgroundTransparency = 0.7 -- Более прозрачный (было 0.4)
     mobileJoystick.BorderSizePixel = 0
     mobileJoystick.Visible = false
     mobileJoystick.Parent = flyControlsGui
     
     local joystickCorner = Instance.new("UICorner")
-    joystickCorner.CornerRadius = UDim.new(0, 60)
+    joystickCorner.CornerRadius = UDim.new(0, 120) -- Увеличен радиус скругления
     joystickCorner.Parent = mobileJoystick
     
     local joystickStroke = Instance.new("UIStroke")
     joystickStroke.Color = Color3.fromRGB(255, 255, 255)
     joystickStroke.Thickness = 2
+    joystickStroke.Transparency = 0.3 -- Полупрозрачная обводка
     joystickStroke.Parent = mobileJoystick
     
-    -- Центр джойстика
+    -- Центр джойстика (также увеличен)
     local joystickCenter = Instance.new("Frame")
     joystickCenter.Name = "JoystickCenter"
-    joystickCenter.Size = UDim2.new(0, 40, 0, 40)
-    joystickCenter.Position = UDim2.new(0.5, -20, 0.5, -20)
+    joystickCenter.Size = UDim2.new(0, 80, 0, 80) -- Увеличен в 2 раза (было 40x40)
+    joystickCenter.Position = UDim2.new(0.5, -40, 0.5, -40) -- Скорректирована позиция
     joystickCenter.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    joystickCenter.BackgroundTransparency = 0.3
-    joystickCenter.BorderSizePixel = 0
+    mobileJoystick.BackgroundTransparency = 0.7 -- Более прозрачный центр
+    mobileJoystick.BorderSizePixel = 0
     joystickCenter.Parent = mobileJoystick
     
     local centerCorner = Instance.new("UICorner")
-    centerCorner.CornerRadius = UDim.new(0, 20)
+    centerCorner.CornerRadius = UDim.new(0, 40) -- Увеличен радиус скругления
     centerCorner.Parent = joystickCenter
     
-    -- Стрелка вверх для подъема (меньше и выше/левее)
+    -- Стрелка вверх для подъема (смещена левее)
     upArrow = Instance.new("TextButton")
     upArrow.Name = "UpArrow"
-    upArrow.Size = UDim2.new(0, 50, 0, 50) -- Уменьшен размер
-    upArrow.Position = UDim2.new(1, -150, 0, 80) -- Выше и левее
+    upArrow.Size = UDim2.new(0, 50, 0, 50)
+    upArrow.Position = UDim2.new(1, -180, 0, 80) -- Смещена левее (было -150)
     upArrow.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
     upArrow.BackgroundTransparency = 0.4
     upArrow.Text = "↑"
@@ -142,11 +142,11 @@ local function createMobileFlyControls()
     upStroke.Thickness = 2
     upStroke.Parent = upArrow
     
-    -- Стрелка вниз для спуска (меньше и выше/левее)
+    -- Стрелка вниз для спуска (смещена левее)
     downArrow = Instance.new("TextButton")
     downArrow.Name = "DownArrow"
-    downArrow.Size = UDim2.new(0, 50, 0, 50) -- Уменьшен размер
-    downArrow.Position = UDim2.new(1, -150, 0, 140) -- Выше и левее
+    downArrow.Size = UDim2.new(0, 50, 0, 50)
+    downArrow.Position = UDim2.new(1, -180, 0, 140) -- Смещена левее (было -150)
     downArrow.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
     downArrow.BackgroundTransparency = 0.4
     downArrow.Text = "↓"
@@ -184,24 +184,24 @@ local function createMobileFlyControls()
             mobileFlyControls.left = false
             mobileFlyControls.right = false
             -- Возвращаем центр джойстика
-            joystickCenter.Position = UDim2.new(0.5, -20, 0.5, -20)
-            joystickCenter.BackgroundTransparency = 0.3
+            joystickCenter.Position = UDim2.new(0.5, -40, 0.5, -40) -- Скорректирована позиция
+            joystickCenter.BackgroundTransparency = 0.7
         end
     end)
     
     UIS.InputChanged:Connect(function(input)
         if joystickActive and input.UserInputType == Enum.UserInputType.Touch and FLY_ENABLED then
             local delta = (input.Position - joystickStart)
-            local maxDistance = 30
+            local maxDistance = 60 -- Увеличен максимальный радиус (было 30)
             
             -- Ограничиваем движение центра джойстика
             local offsetX = math.clamp(delta.X, -maxDistance, maxDistance)
             local offsetY = math.clamp(delta.Y, -maxDistance, maxDistance)
             
-            joystickCenter.Position = UDim2.new(0.5, -20 + offsetX, 0.5, -20 + offsetY)
+            joystickCenter.Position = UDim2.new(0.5, -40 + offsetX, 0.5, -40 + offsetY) -- Скорректирована позиция
             
             -- Определяем направление движения с мертвой зоной
-            local deadZone = 23
+            local deadZone = 20 -- Увеличенная мертвая зона (было 10)
             
             -- Только горизонтальное движение (без изменения высоты)
             mobileFlyControls.forward = (offsetY < -deadZone)
@@ -393,6 +393,7 @@ local function createMobileToggleButton()
     
     return mobileToggleButton
 end
+
 local function initializeMobileInterface()
     if not IS_MOBILE then return end
     
@@ -753,7 +754,6 @@ local function startAutoCollect()
         end
     end)
 end
-
 -- ИСПРАВЛЕННЫЕ Auto Farm функции
 local function returnToZero()
     local character = LocalPlayer.Character
@@ -907,7 +907,6 @@ local function updateNoClip()
         end
     end
 end
-
 -- ИСПРАВЛЕННАЯ функция Fly с раздельным управлением
 local function updateFly()
     if flyConnection then
