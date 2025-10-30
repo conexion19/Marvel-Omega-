@@ -57,6 +57,7 @@ local AUTO_FARM_CHECK_INTERVAL = 2
 local flyKeys = { W = false, A = false, S = false, D = false, Up = false, Down = false }
 
 -- Функции для мобильной кнопки
+-- Функции для мобильной кнопки
 local function createMobileToggleButton()
     if mobileToggleGui then mobileToggleGui:Destroy() end
     
@@ -73,10 +74,10 @@ local function createMobileToggleButton()
     mobileToggleButton.Position = UDim2.new(1, -70, 0.5, -30)
     mobileToggleButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
     mobileToggleButton.Text = "N"
-    mobileToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    mobileToggleButton.Font = Enum.Font.GothamBlack
+    mobileToggleButton.TextColor3 = Color3.fromRGB(255, 255, 0)
+    mobileToggleButton.Font = Enum.Font.GothamBold
     mobileToggleButton.TextSize = 32
-    mobileToggleButton.TextStrokeTransparency = 0
+    mobileToggleButton.TextStrokeTransparency = 0.5
     mobileToggleButton.TextStrokeColor3 = Color3.fromRGB(255, 255, 255)
     mobileToggleButton.ZIndex = 100
     mobileToggleButton.Parent = mobileToggleGui
@@ -92,9 +93,71 @@ local function createMobileToggleButton()
     stroke.Thickness = 2
     stroke.Parent = mobileToggleButton
     
+    -- Переменные для перемещения
+    local isDragging = false
+    local dragStart, buttonStart
+    
+    -- Функция начала перемещения (только для touch)
+    local function startDrag(input)
+        if input.UserInputType == Enum.UserInputType.Touch then
+            isDragging = true
+            dragStart = input.Position
+            buttonStart = mobileToggleButton.Position
+        end
+    end
+    
+    -- Функция окончания перемещения
+    local function endDrag()
+        isDragging = false
+    end
+    
+    -- Обработчики для перемещения (только touch)
+    mobileToggleButton.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.Touch then
+            startDrag(input)
+        end
+    end)
+    
+    mobileToggleButton.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.Touch and isDragging then
+            endDrag()
+        end
+    end)
+    
+    -- Обработка перемещения (только touch)
+    UIS.InputChanged:Connect(function(input)
+        if isDragging and input.UserInputType == Enum.UserInputType.Touch then
+            local delta = input.Position - dragStart
+            
+            local newX = math.clamp(buttonStart.X.Offset + delta.X, 0, mobileToggleButton.AbsoluteSize.X)
+            local newY = math.clamp(buttonStart.Y.Offset + delta.Y, 0, mobileToggleButton.AbsoluteSize.Y)
+            
+            mobileToggleButton.Position = UDim2.new(buttonStart.X.Scale, newX, buttonStart.Y.Scale, newY)
+        end
+    end)
+    
+    -- Двойной тап для сброса позиции (только touch)
+    local lastTapTime = 0
+    mobileToggleButton.MouseButton1Click:Connect(function()
+        local currentTime = tick()
+        if currentTime - lastTapTime < 0.5 then
+            -- Двойной тап - сброс позиции
+            mobileToggleButton.Position = UDim2.new(1, -70, 0.5, -30)
+            Library:Notify({
+                Title = "Nexus Mobile",
+                Content = "Button position reset",
+                Duration = 2
+            })
+        else
+            -- Одинарный тап - переключение интерфейса
+            toggleMobileInterface()
+        end
+        lastTapTime = currentTime
+    end)
+    
     -- Анимация при нажатии
     mobileToggleButton.MouseButton1Down:Connect(function()
-        if mobileToggleButton then
+        if not isDragging then
             local tweenInfo = TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
             local tween = TweenService:Create(mobileToggleButton, tweenInfo, {
                 Size = UDim2.new(0, 55, 0, 55),
@@ -105,7 +168,7 @@ local function createMobileToggleButton()
     end)
     
     mobileToggleButton.MouseButton1Up:Connect(function()
-        if mobileToggleButton then
+        if not isDragging then
             local tweenInfo = TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
             local tween = TweenService:Create(mobileToggleButton, tweenInfo, {
                 Size = UDim2.new(0, 60, 0, 60),
@@ -115,33 +178,8 @@ local function createMobileToggleButton()
         end
     end)
     
-    -- Обработчик клика
-    mobileToggleButton.MouseButton1Click:Connect(function()
-        toggleMobileInterface()
-    end)
-    
     return mobileToggleButton
 end
-
-local function toggleMobileInterface()
-    if not Library or not Library.Window then return end
-    
-    isMobileInterfaceVisible = not isMobileInterfaceVisible
-    Library.Window.Enabled = isMobileInterfaceVisible
-    
-    -- Обновляем внешний вид кнопки
-    if mobileToggleButton then
-        if isMobileInterfaceVisible then
-            mobileToggleButton.Text = "N"
-            mobileToggleButton.TextColor3 = Color3.fromRGB(255, 50, 50)
-            mobileToggleButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-        else
-            mobileToggleButton.Text = "N"
-            mobileToggleButton.TextColor3 = Color3.fromRGB(255, 255, 0)
-            mobileToggleButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-        end
-    end
-    
     -- Уведомление
     Library:Notify({
         Title = "Nexus Mobile",
