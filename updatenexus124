@@ -997,7 +997,7 @@ local function updateNoClip()
         noclipConnection:Disconnect()
         noclipConnection = nil
     end
-    
+
     if NOCLIP_ENABLED then
         noclipConnection = RunService.Stepped:Connect(function()
             if NOCLIP_ENABLED then
