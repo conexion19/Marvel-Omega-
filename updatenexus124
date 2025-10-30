@@ -119,22 +119,22 @@ local function createMobileFlyControls()
     centerCorner.CornerRadius = UDim.new(0, 20)
     centerCorner.Parent = joystickCenter
     
-    -- Стрелка вверх для подъема
+    -- Стрелка вверх для подъема (меньше и выше/левее)
     upArrow = Instance.new("TextButton")
     upArrow.Name = "UpArrow"
-    upArrow.Size = UDim2.new(0, 60, 0, 60)
-    upArrow.Position = UDim2.new(1, -80, 0, 50)
+    upArrow.Size = UDim2.new(0, 50, 0, 50) -- Уменьшен размер
+    upArrow.Position = UDim2.new(1, -150, 0, 80) -- Выше и левее
     upArrow.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
     upArrow.BackgroundTransparency = 0.4
     upArrow.Text = "↑"
     upArrow.TextColor3 = Color3.fromRGB(255, 255, 255)
     upArrow.Font = Enum.Font.GothamBold
-    upArrow.TextSize = 24
+    upArrow.TextSize = 20
     upArrow.Visible = false
     upArrow.Parent = flyControlsGui
     
     local upCorner = Instance.new("UICorner")
-    upCorner.CornerRadius = UDim.new(0, 30)
+    upCorner.CornerRadius = UDim.new(0, 25)
     upCorner.Parent = upArrow
     
     local upStroke = Instance.new("UIStroke")
@@ -142,22 +142,22 @@ local function createMobileFlyControls()
     upStroke.Thickness = 2
     upStroke.Parent = upArrow
     
-    -- Стрелка вниз для спуска
+    -- Стрелка вниз для спуска (меньше и выше/левее)
     downArrow = Instance.new("TextButton")
     downArrow.Name = "DownArrow"
-    downArrow.Size = UDim2.new(0, 60, 0, 60)
-    downArrow.Position = UDim2.new(1, -80, 0, 120)
+    downArrow.Size = UDim2.new(0, 50, 0, 50) -- Уменьшен размер
+    downArrow.Position = UDim2.new(1, -150, 0, 140) -- Выше и левее
     downArrow.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
     downArrow.BackgroundTransparency = 0.4
     downArrow.Text = "↓"
     downArrow.TextColor3 = Color3.fromRGB(255, 255, 255)
     downArrow.Font = Enum.Font.GothamBold
-    downArrow.TextSize = 24
+    downArrow.TextSize = 20
     downArrow.Visible = false
     downArrow.Parent = flyControlsGui
     
     local downCorner = Instance.new("UICorner")
-    downCorner.CornerRadius = UDim.new(0, 30)
+    downCorner.CornerRadius = UDim.new(0, 25)
     downCorner.Parent = downArrow
     
     local downStroke = Instance.new("UIStroke")
@@ -211,25 +211,50 @@ local function createMobileFlyControls()
         end
     end)
     
-    -- Обработчики для стрелок высоты
-    upArrow.MouseButton1Down:Connect(function()
+    -- Обработчики для стрелок высоты (ИСПРАВЛЕНО)
+    local function onUpButtonDown()
         mobileFlyControls.up = true
         upArrow.BackgroundTransparency = 0.1
-    end)
+    end
     
-    upArrow.MouseButton1Up:Connect(function()
+    local function onUpButtonUp()
         mobileFlyControls.up = false
         upArrow.BackgroundTransparency = 0.4
-    end)
+    end
     
-    downArrow.MouseButton1Down:Connect(function()
+    local function onDownButtonDown()
         mobileFlyControls.down = true
         downArrow.BackgroundTransparency = 0.1
-    end)
+    end
     
-    downArrow.MouseButton1Up:Connect(function()
+    local function onDownButtonUp()
         mobileFlyControls.down = false
         downArrow.BackgroundTransparency = 0.4
+    end
+    
+    -- Подключаем обработчики для touch и mouse
+    upArrow.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+            onUpButtonDown()
+        end
+    end)
+    
+    upArrow.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+            onUpButtonUp()
+        end
+    end)
+    
+    downArrow.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+            onDownButtonDown()
+        end
+    end)
+    
+    downArrow.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+            onDownButtonUp()
+        end
     end)
     
     return mobileJoystick, upArrow, downArrow
@@ -245,6 +270,7 @@ local function toggleMobileFlyControls(visible)
     end
 end
 
+-- Функция создания кнопки N (в середине чуть правее сверху)
 local function createMobileToggleButton()
     if mobileToggleGui then mobileToggleGui:Destroy() end
     
@@ -254,20 +280,20 @@ local function createMobileToggleButton()
     mobileToggleGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     mobileToggleGui.Parent = game:GetService("CoreGui")
     
-    -- Основная кнопка с буквой N (менее жирная)
-mobileToggleButton = Instance.new("TextButton")
-mobileToggleButton.Name = "MobileToggleButton"
-mobileToggleButton.Size = UDim2.new(0, 60, 0, 60)
-mobileToggleButton.Position = UDim2.new(1, -70, 0.5, -30)
-mobileToggleButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-mobileToggleButton.Text = "N"
-mobileToggleButton.TextColor3 = Color3.fromRGB(255, 255,255)
-mobileToggleButton.Font = Enum.Font.GothamBold  -- Менее жирный чем GothamBlack
-mobileToggleButton.TextSize = 32
-mobileToggleButton.TextStrokeTransparency = 0.5  -- Полупрозрачная обводка
-mobileToggleButton.TextStrokeColor3 = Color3.fromRGB(255, 255, 255)
-mobileToggleButton.ZIndex = 100
-mobileToggleButton.Parent = mobileToggleGui
+    -- Основная кнопка с буквой N (в середине чуть правее сверху)
+    mobileToggleButton = Instance.new("TextButton")
+    mobileToggleButton.Name = "MobileToggleButton"
+    mobileToggleButton.Size = UDim2.new(0, 60, 0, 60)
+    mobileToggleButton.Position = UDim2.new(0.6, -30, 0, 20) -- Середина чуть правее сверху
+    mobileToggleButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    mobileToggleButton.Text = "N"
+    mobileToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    mobileToggleButton.Font = Enum.Font.GothamBold
+    mobileToggleButton.TextSize = 32
+    mobileToggleButton.TextStrokeTransparency = 0.5
+    mobileToggleButton.TextStrokeColor3 = Color3.fromRGB(255, 255, 255)
+    mobileToggleButton.ZIndex = 100
+    mobileToggleButton.Parent = mobileToggleGui
     
     -- Скругленные углы
     local corner = Instance.new("UICorner")
@@ -329,7 +355,7 @@ mobileToggleButton.Parent = mobileToggleGui
         local currentTime = tick()
         if currentTime - lastTapTime < 0.5 then
             -- Двойной тап - сброс позиции
-            mobileToggleButton.Position = UDim2.new(1, -70, 0.5, -30)
+            mobileToggleButton.Position = UDim2.new(0.6, -30, 0, 20)
             Library:Notify({
                 Title = "Nexus Mobile",
                 Content = "Button position reset",
@@ -367,7 +393,6 @@ mobileToggleButton.Parent = mobileToggleGui
     
     return mobileToggleButton
 end
-
 local function initializeMobileInterface()
     if not IS_MOBILE then return end
     
@@ -667,7 +692,7 @@ local function performAutoTeleport()
             print(string.format("Телепортация к новому объекту. Посещено: %d/%d", visitedObjects + 1, totalObjects))
             
             -- Активируем промпт после телепортации
-            task.wait(0.3)
+            task.wait(0.1)
             local prompt = availableTargets[1].prompt
             if prompt and prompt.Enabled then
                 fireProximity(prompt)
@@ -798,7 +823,7 @@ local function performAutoFarmCycle()
             processedAny = true
             
             -- Ждем стабилизации после телепортации
-            task.wait(0.5)
+            task.wait(0.2)
             
             -- Активируем промпт
             if prompt and prompt.Enabled then
@@ -918,21 +943,29 @@ local function updateFly()
                 
                 if IS_MOBILE then
                     -- Горизонтальное движение через джойстик
-                    if mobileFlyControls.forward then dir = dir + cam.CFrame.LookVector end
-                    if mobileFlyControls.backward then dir = dir - cam.CFrame.LookVector end
-                    if mobileFlyControls.left then dir = dir - cam.CFrame.RightVector end
-                    if mobileFlyControls.right then dir = dir + cam.CFrame.RightVector end
+                    if mobileFlyControls.forward then 
+                        local forwardDir = cam.CFrame.LookVector
+                        dir = dir + Vector3.new(forwardDir.X, 0, forwardDir.Z).Unit
+                    end
+                    if mobileFlyControls.backward then 
+                        local backwardDir = -cam.CFrame.LookVector
+                        dir = dir + Vector3.new(backwardDir.X, 0, backwardDir.Z).Unit
+                    end
+                    if mobileFlyControls.left then 
+                        local leftDir = -cam.CFrame.RightVector
+                        dir = dir + Vector3.new(leftDir.X, 0, leftDir.Z).Unit
+                    end
+                    if mobileFlyControls.right then 
+                        local rightDir = cam.CFrame.RightVector
+                        dir = dir + Vector3.new(rightDir.X, 0, rightDir.Z).Unit
+                    end
                     
                     -- Вертикальное движение через стрелки
-                    if mobileFlyControls.up then dir = dir + Vector3.new(0, 1, 0) end
-                    if mobileFlyControls.down then dir = dir - Vector3.new(0, 1, 0) end
-                    
-                    -- Убираем вертикальную составляющую из горизонтального движения
-                    if mobileFlyControls.forward or mobileFlyControls.backward or mobileFlyControls.left or mobileFlyControls.right then
-                        dir = Vector3.new(dir.X, 0, dir.Z).Unit
-                        if dir.Magnitude > 0 then
-                            dir = dir + Vector3.new(0, dir.Y, 0)
-                        end
+                    if mobileFlyControls.up then 
+                        dir = dir + Vector3.new(0, 1, 0) 
+                    end
+                    if mobileFlyControls.down then 
+                        dir = dir + Vector3.new(0, -1, 0) 
                     end
                 else
                     -- ПК управление
@@ -1018,7 +1051,6 @@ local function updateJumpPower()
         end
     end
 end
-
 -- Input handling
 local function handleFlyInput(input, isBeginning)
     if not FLY_ENABLED then return end
@@ -1040,7 +1072,6 @@ end)
 UIS.InputEnded:Connect(function(input)
     handleFlyInput(input, false)
 end)
-
 -- Ускоренная инициализация GUI
 local function initializeGUI()
     if _G.NexusGUIInitialized then return end
