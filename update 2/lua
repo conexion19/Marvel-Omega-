@@ -239,6 +239,7 @@ local function initializeMobileInterface()
         isMobileInterfaceVisible = false
     end
     
+    -- Убираем упоминание о Fly в уведомлении для мобильных
     Library:Notify({
         Title = "Nexus Mobile",
         Content = "Tap the N button to open interface\nDrag to move button position\nDouble tap to reset position",
@@ -1033,7 +1034,7 @@ local function initializeGUI()
         end
     end)
 
-    -- Rage Tab
+        -- Rage Tab
     Tabs.rage:CreateSection("Movement")
     
     local NoClipToggle = Tabs.rage:CreateToggle("NoClip", {
@@ -1047,16 +1048,19 @@ local function initializeGUI()
         updateNoClip()
     end)
 
-    local FlyToggle = Tabs.rage:CreateToggle("Fly", {
-        Title = "Fly",
-        Description = "Allows flying in any direction",
-        Default = false
-    })
-    
-    FlyToggle:OnChanged(function(Value)
-        FLY_ENABLED = Value
-        updateFly()
-    end)
+    -- Тоггл Fly показывается только на PC
+    if IS_DESKTOP then
+        local FlyToggle = Tabs.rage:CreateToggle("Fly", {
+            Title = "Fly [PC Only]",
+            Description = "Allows flying in any direction [PC only]",
+            Default = false
+        })
+        
+        FlyToggle:OnChanged(function(Value)
+            FLY_ENABLED = Value
+            updateFly()
+        end)
+    end
 
     local WalkSpeedToggle = Tabs.rage:CreateToggle("WalkSpeed", {
         Title = "Walk Speed",
@@ -1082,17 +1086,20 @@ local function initializeGUI()
 
     Tabs.rage:CreateSection("Setting up functions")
 
-    Tabs.rage:CreateSlider("FlySpeed", {
-        Title = "Fly Speed",
-        Description = "Fly speed (1-200)",
-        Default = 50,
-        Min = 1,
-        Max = 200,
-        Rounding = 1,
-        Callback = function(value)
-            currentFlySpeed = value
-        end
-    })
+    -- Слайдер Fly Speed тоже показываем только на PC
+    if IS_DESKTOP then
+        Tabs.rage:CreateSlider("FlySpeed", {
+            Title = "Fly Speed",
+            Description = "Fly speed (1-200)",
+            Default = 50,
+            Min = 1,
+            Max = 200,
+            Rounding = 1,
+            Callback = function(value)
+                currentFlySpeed = value
+            end
+        })
+    end
     
     Tabs.rage:CreateSlider("WalkSpeedValue", {
         Title = "Walk Speed Value",
@@ -1138,11 +1145,11 @@ local function initializeGUI()
     
     local loadTime = tick() - startTime
     
-    -- Разные уведомления для ПК и мобильных
+      -- Разные уведомления для ПК и мобильных
     if IS_MOBILE then
         Library:Notify({
             Title = "Nexus Mobile",
-            Content = "Interface loaded! Tap the N button to open.",
+            Content = "Interface loaded! Tap the N button to open.\nFly feature not available on mobile.",
             Duration = 5
         })
     else
