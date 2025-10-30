@@ -1,0 +1,1295 @@
+-- Основная функция, принимающая параметр IS_MOBILE
+return function(IS_MOBILE)
+    -- Ускоренная загрузка библиотек
+    local startTime = tick()
+
+    -- Параллельная загрузка библиотек
+    local Library, SaveManager, InterfaceManager, le
+
+    local loadTasks = {
+        function() Library = loadstring(game:HttpGet("https://github.com/ActualMasterOogway/Fluent-Renewed/releases/latest/download/Fluent.luau"))() end,
+        function() SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/ActualMasterOogway/Fluent-Renewed/master/Addons/SaveManager.luau"))() end,
+        function() InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/ActualMasterOogway/Fluent-Renewed/master/Addons/InterfaceManager.luau"))() end,
+        function() le = loadstring(game:HttpGet('https://raw.githubusercontent.com/zawerex/Conexion1/refs/heads/main/conexion1'))() end
+    }
+
+    -- Запускаем все загрузки параллельно
+    for _, task in ipairs(loadTasks) do
+        task()
+    end
+
+    -- Services
+    local Players, RunService, Workspace, UIS, TweenService = game:GetService("Players"), game:GetService("RunService"), game:GetService("Workspace"), game:GetService("UserInputService"), game:GetService("TweenService")
+    local LocalPlayer = Players.LocalPlayer
+
+    -- Переменные для мобильного интерфейса
+    local mobileToggleButton, mobileGUI, isMobileGUIVisible = nil, nil, true
+
+    -- Быстрая инициализация переменных
+    local limbs, espObjects, currentTargets, teleportedObjects, autoFarmProcessedObjects = {}, {}, {}, {}, {}
+    local connections = { esp = nil, autoCollect = nil, autoFarm = nil }
+    local lastTeleportTime, noclipConnection, flyConnection, bodyVelocity = 0
+
+    -- Оптимизированные настройки
+    local ESP_ENABLED = false
+    local AUTO_COLLECT_ENABLED = false
+    local AUTO_TELEPORT_ENABLED = false
+    local AUTO_FIRE = false
+    local AUTO_FARM_ENABLED = false
+    local NOCLIP_ENABLED = false
+    local FLY_ENABLED = false
+    local WALKSPEED_ENABLED = false
+    local JUMPPOWER_ENABLED = false
+    local autoFarmIsActive = true
+
+    local SCAN_RADIUS = 30
+    local TELEPORT_COOLDOWN = 0.6  -- КД между телепортациями
+    local currentFlySpeed = 50
+    local currentWalkSpeed = 16
+    local currentJumpPower = 50
+    local defaultWalkSpeed = 16
+    local defaultJumpPower = 50
+    local AUTO_FARM_RETURN_DELAY = 1
+    local AUTO_FARM_TELEPORT_DELAY = 0.3
+    local AUTO_FARM_CHECK_INTERVAL = 2
+
+    local flyKeys = { W = false, A = false, S = false, D = false, Up = false, Down = false }
+
+    -- Функции для мобильного интерфейса
+    local function createMobileGUI()
+        if mobileGUI then mobileGUI:Destroy() end
+        
+        mobileGUI = Instance.new("ScreenGui")
+        mobileGUI.Name = "NexusMobileGUI"
+        mobileGUI.ResetOnSpawn = false
+        mobileGUI.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+        mobileGUI.Parent = game:GetService("CoreGui")
+        
+        -- Основной контейнер
+        local mainFrame = Instance.new("Frame")
+        mainFrame.Name = "MainFrame"
+        mainFrame.Size = UDim2.new(0.8, 0, 0.7, 0)
+        mainFrame.Position = UDim2.new(0.1, 0, 0.15, 0)
+        mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+        mainFrame.BorderSizePixel = 0
+        mainFrame.ClipsDescendants = true
+        mainFrame.Parent = mobileGUI
+        
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0, 12)
+        corner.Parent = mainFrame
+        
+        local stroke = Instance.new("UIStroke")
+        stroke.Color = Color3.fromRGB(80, 80, 80)
+        stroke.Thickness = 2
+        stroke.Parent = mainFrame
+        
+        -- Заголовок
+        local header = Instance.new("Frame")
+        header.Name = "Header"
+        header.Size = UDim2.new(1, 0, 0, 40)
+        header.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        header.BorderSizePixel = 0
+        header.Parent = mainFrame
+        
+        local headerCorner = Instance.new("UICorner")
+        headerCorner.CornerRadius = UDim.new(0, 12)
+        headerCorner.Parent = header
+        
+        local title = Instance.new("TextLabel")
+        title.Name = "Title"
+        title.Size = UDim2.new(1, -80, 1, 0)
+        title.Position = UDim2.new(0, 10, 0, 0)
+        title.BackgroundTransparency = 1
+        title.Text = "Nexus v1.0.0"
+        title.TextColor3 = Color3.fromRGB(255, 255, 255)
+        title.Font = Enum.Font.GothamBold
+        title.TextSize = 18
+        title.TextXAlignment = Enum.TextXAlignment.Left
+        title.Parent = header
+        
+        -- Кнопка закрытия
+        local closeButton = Instance.new("TextButton")
+        closeButton.Name = "CloseButton"
+        closeButton.Size = UDim2.new(0, 30, 0, 30)
+        closeButton.Position = UDim2.new(1, -40, 0, 5)
+        closeButton.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
+        closeButton.Text = "X"
+        closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+        closeButton.Font = Enum.Font.GothamBold
+        closeButton.TextSize = 16
+        closeButton.Parent = header
+        
+        local closeCorner = Instance.new("UICorner")
+        closeCorner.CornerRadius = UDim.new(0, 6)
+        closeCorner.Parent = closeButton
+        
+        closeButton.MouseButton1Click:Connect(function()
+            toggleMobileGUI()
+        end)
+        
+        -- Контейнер для контента
+        local contentFrame = Instance.new("Frame")
+        contentFrame.Name = "ContentFrame"
+        contentFrame.Size = UDim2.new(1, 0, 1, -40)
+        contentFrame.Position = UDim2.new(0, 0, 0, 40)
+        contentFrame.BackgroundTransparency = 1
+        contentFrame.Parent = mainFrame
+        
+        local contentLayout = Instance.new("UIListLayout")
+        contentLayout.FillDirection = Enum.FillDirection.Vertical
+        contentLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+        contentLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+        contentLayout.Padding = UDim.new(0, 10)
+        contentLayout.Parent = contentFrame
+        
+        -- Секции для быстрого доступа
+        local quickSections = {
+            {
+                Name = "Farm",
+                Buttons = {
+                    {Name = "Auto Farm", Toggle = "AutoFarm"},
+                    {Name = "Auto Collect", Toggle = "AutoCollect"},
+                    {Name = "ESP Chests", Toggle = "EspChests"}
+                }
+            },
+            {
+                Name = "Movement", 
+                Buttons = {
+                    {Name = "Fly", Toggle = "Fly"},
+                    {Name = "NoClip", Toggle = "NoClip"},
+                    {Name = "Speed", Toggle = "WalkSpeed"}
+                }
+            }
+        }
+        
+        for _, section in ipairs(quickSections) do
+            local sectionFrame = Instance.new("Frame")
+            sectionFrame.Name = section.Name .. "Section"
+            sectionFrame.Size = UDim2.new(0.9, 0, 0, 120)
+            sectionFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+            sectionFrame.Parent = contentFrame
+            
+            local sectionCorner = Instance.new("UICorner")
+            sectionCorner.CornerRadius = UDim.new(0, 8)
+            sectionCorner.Parent = sectionFrame
+            
+            local sectionTitle = Instance.new("TextLabel")
+            sectionTitle.Name = "SectionTitle"
+            sectionTitle.Size = UDim2.new(1, 0, 0, 25)
+            sectionTitle.BackgroundTransparency = 1
+            sectionTitle.Text = section.Name
+            sectionTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+            sectionTitle.Font = Enum.Font.GothamBold
+            sectionTitle.TextSize = 14
+            sectionTitle.Parent = sectionFrame
+            
+            local buttonsLayout = Instance.new("UIListLayout")
+            buttonsLayout.FillDirection = Enum.FillDirection.Horizontal
+            buttonsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+            buttonsLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+            buttonsLayout.Padding = UDim.new(0, 5)
+            buttonsLayout.Parent = sectionFrame
+            
+            for _, buttonData in ipairs(section.Buttons) do
+                local button = Instance.new("TextButton")
+                button.Name = buttonData.Name
+                button.Size = UDim2.new(0.3, 0, 0, 40)
+                button.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+                button.Text = buttonData.Name
+                button.TextColor3 = Color3.fromRGB(255, 255, 255)
+                button.Font = Enum.Font.Gotham
+                button.TextSize = 12
+                button.TextWrapped = true
+                button.Parent = sectionFrame
+                
+                local buttonCorner = Instance.new("UICorner")
+                buttonCorner.CornerRadius = UDim.new(0, 6)
+                buttonCorner.Parent = button
+                
+                button.MouseButton1Click:Connect(function()
+                    if Library and Library.Options and Library.Options[buttonData.Toggle] then
+                        local currentValue = Library.Options[buttonData.Toggle].Value
+                        Library.Options[buttonData.Toggle]:SetValue(not currentValue)
+                    end
+                end)
+            end
+        end
+        
+        -- Информация о статусе
+        local statusFrame = Instance.new("Frame")
+        statusFrame.Name = "StatusFrame"
+        statusFrame.Size = UDim2.new(0.9, 0, 0, 60)
+        statusFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        statusFrame.Parent = contentFrame
+        
+        local statusCorner = Instance.new("UICorner")
+        statusCorner.CornerRadius = UDim.new(0, 8)
+        statusCorner.Parent = statusFrame
+        
+        local statusTitle = Instance.new("TextLabel")
+        statusTitle.Name = "StatusTitle"
+        statusTitle.Size = UDim2.new(1, 0, 0, 20)
+        statusTitle.BackgroundTransparency = 1
+        statusTitle.Text = "Active Features"
+        statusTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+        statusTitle.Font = Enum.Font.GothamBold
+        statusTitle.TextSize = 12
+        statusTitle.Parent = statusFrame
+        
+        local statusText = Instance.new("TextLabel")
+        statusText.Name = "StatusText"
+        statusText.Size = UDim2.new(1, -10, 0, 35)
+        statusText.Position = UDim2.new(0, 5, 0, 20)
+        statusText.BackgroundTransparency = 1
+        statusText.Text = "No active features"
+        statusText.TextColor3 = Color3.fromRGB(200, 200, 200)
+        statusText.Font = Enum.Font.Gotham
+        statusText.TextSize = 11
+        statusText.TextWrapped = true
+        statusText.TextXAlignment = Enum.TextXAlignment.Left
+        statusText.Parent = statusFrame
+        
+        -- Обновление статуса
+        if connections.mobileStatus then
+            connections.mobileStatus:Disconnect()
+        end
+        
+        connections.mobileStatus = RunService.Heartbeat:Connect(function()
+            if mobileGUI and statusText then
+                local activeFeatures = {}
+                
+                if AUTO_FARM_ENABLED then table.insert(activeFeatures, "Auto Farm") end
+                if AUTO_COLLECT_ENABLED then table.insert(activeFeatures, "Auto Collect") end
+                if ESP_ENABLED then table.insert(activeFeatures, "ESP") end
+                if FLY_ENABLED then table.insert(activeFeatures, "Fly") end
+                if NOCLIP_ENABLED then table.insert(activeFeatures, "NoClip") end
+                if WALKSPEED_ENABLED then table.insert(activeFeatures, "Speed") end
+                
+                if #activeFeatures > 0 then
+                    statusText.Text = table.concat(activeFeatures, ", ")
+                    statusText.TextColor3 = Color3.fromRGB(100, 255, 100)
+                else
+                    statusText.Text = "No active features"
+                    statusText.TextColor3 = Color3.fromRGB(200, 200, 200)
+                end
+            end
+        end)
+        
+        return mobileGUI
+    end
+
+    local function createMobileToggleButton()
+        if mobileToggleButton then mobileToggleButton:Destroy() end
+        
+        mobileToggleButton = Instance.new("TextButton")
+        mobileToggleButton.Name = "MobileToggleButton"
+        mobileToggleButton.Size = UDim2.new(0, 60, 0, 60)
+        mobileToggleButton.Position = UDim2.new(1, -70, 0.5, -30)
+        mobileToggleButton.BackgroundColor3 = Color3.fromRGB(0, 100, 255)
+        mobileToggleButton.Text = "☰"
+        mobileToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+        mobileToggleButton.Font = Enum.Font.GothamBold
+        mobileToggleButton.TextSize = 24
+        mobileToggleButton.ZIndex = 100
+        mobileToggleButton.Parent = mobileGUI or game:GetService("CoreGui")
+        
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0, 30)
+        corner.Parent = mobileToggleButton
+        
+        local stroke = Instance.new("UIStroke")
+        stroke.Color = Color3.fromRGB(255, 255, 255)
+        stroke.Thickness = 2
+        stroke.Parent = mobileToggleButton
+        
+        mobileToggleButton.MouseButton1Click:Connect(toggleMobileGUI)
+        
+        return mobileToggleButton
+    end
+
+    local function toggleMobileGUI()
+        if not mobileGUI then
+            createMobileGUI()
+            isMobileGUIVisible = true
+            return
+        end
+        
+        local mainFrame = mobileGUI:FindFirstChild("MainFrame")
+        if mainFrame then
+            if isMobileGUIVisible then
+                -- Анимация скрытия
+                local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+                local tween = TweenService:Create(mainFrame, tweenInfo, {Position = UDim2.new(1.1, 0, 0.15, 0)})
+                tween:Play()
+                isMobileGUIVisible = false
+            else
+                -- Анимация показа
+                mainFrame.Visible = true
+                local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+                local tween = TweenService:Create(mainFrame, tweenInfo, {Position = UDim2.new(0.1, 0, 0.15, 0)})
+                tween:Play()
+                isMobileGUIVisible = true
+            end
+        end
+    end
+
+    local function initializeMobileInterface()
+        if not IS_MOBILE then return end
+        
+        -- Создаем GUI для мобильных устройств
+        createMobileGUI()
+        createMobileToggleButton()
+        
+        -- Скрываем основной интерфейс по умолчанию для мобильных устройств
+        if Library and Library.Window then
+            Library.Window.Enabled = false
+        end
+        
+        Library:Notify({
+            Title = "Nexus Mobile",
+            Content = "Mobile interface loaded! Use the button to toggle menu.",
+            Duration = 5
+        })
+    end
+
+    -- ESP Folder (создаем только при необходимости)
+    local espFolder
+    local function getESPFolder()
+        if not espFolder then
+            espFolder = workspace:FindFirstChild("TargetESP") or Instance.new("Folder")
+            espFolder.Name = "TargetESP"
+            if not espFolder.Parent then
+                espFolder.Parent = workspace
+            end
+        end
+        return espFolder
+    end
+
+    -- Оптимизированные utility functions
+    local function updateLimbsList()
+        local character = LocalPlayer.Character
+        if not character then return end
+        
+        limbs = {}
+        for _, child in ipairs(character:GetChildren()) do
+            if child:IsA("BasePart") then 
+                limbs[#limbs + 1] = child.Name 
+            end
+        end
+        table.sort(limbs)
+    end
+
+    local function teleportToTarget(targetObject)
+        local character = LocalPlayer.Character
+        if not character then return false end
+        
+        local hrp = character:FindFirstChild("HumanoidRootPart")
+        if not hrp then return false end
+        
+        return pcall(function()
+            hrp.CFrame = CFrame.new(targetObject.Position + Vector3.new(0, 3, 0))
+            Workspace.CurrentCamera.CFrame = hrp.CFrame
+            return true
+        end)
+    end
+
+    local targetCache = {objects = {}, lastUpdate = 0}
+    local function findAllTargetPrompts()
+        local currentTime = tick()
+        -- Кэшируем результаты на 0.5 секунды для производительности
+        if currentTime - targetCache.lastUpdate < 0.5 and #targetCache.objects > 0 then
+            return targetCache.objects
+        end
+        
+        local targets = {}
+        for _, obj in ipairs(Workspace:GetChildren()) do
+            if obj.Name == "" then
+                local promptAttachment = obj:FindFirstChild("PromptAttachment")
+                if promptAttachment then
+                    local prompt = promptAttachment:FindFirstChild("ProximityPrompt")
+                    if prompt and prompt:IsA("ProximityPrompt") then
+                        targets[#targets + 1] = {prompt = prompt, object = obj}
+                    end
+                end
+            end
+        end
+        
+        targetCache.objects = targets
+        targetCache.lastUpdate = currentTime
+        return targets
+    end
+
+    local function fireProximity(prompt)
+        if prompt and prompt:IsA("ProximityPrompt") and prompt.Enabled then
+            return pcall(function() 
+                local originalHoldDuration = prompt.HoldDuration
+                prompt.HoldDuration = 0 
+                fireproximityprompt(prompt)
+                prompt.HoldDuration = originalHoldDuration
+            end)
+        end
+        return false
+    end
+
+    local function teleportToPosition(position)
+        local character = LocalPlayer.Character
+        if not character then return false end
+        
+        local hrp = character:FindFirstChild("HumanoidRootPart")
+        if not hrp then return false end
+        
+        return pcall(function()
+            hrp.CFrame = CFrame.new(position)
+            Workspace.CurrentCamera.CFrame = hrp.CFrame
+        end)
+    end
+
+    -- Оптимизированные ESP функции
+    local function createESP(targetObject)
+        if not targetObject or espObjects[targetObject] then return false end
+        
+        local mainBillboard = Instance.new("BillboardGui")
+        mainBillboard.Name = "ESPBillboard"
+        mainBillboard.Size = UDim2.new(0, 250, 0, 60)
+        mainBillboard.StudsOffset = Vector3.new(0, 4, 0)
+        mainBillboard.AlwaysOnTop = true
+        mainBillboard.Adornee = targetObject
+        mainBillboard.Parent = getESPFolder()
+        
+        local container = Instance.new("Frame")
+        container.Size = UDim2.new(1, 0, 1, 0)
+        container.BackgroundTransparency = 1
+        container.Parent = mainBillboard
+        
+        local uiListLayout = Instance.new("UIListLayout")
+        uiListLayout.FillDirection = Enum.FillDirection.Horizontal
+        uiListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+        uiListLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+        uiListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+        uiListLayout.Padding = UDim.new(0, 5)
+        uiListLayout.Parent = container
+        
+        local iconLabel = Instance.new("TextLabel")
+        iconLabel.Name = "Icon"
+        iconLabel.Size = UDim2.new(0, 40, 0, 40)
+        iconLabel.BackgroundTransparency = 1
+        iconLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+        iconLabel.TextStrokeTransparency = 0.5
+        iconLabel.TextStrokeColor3 = Color3.fromRGB(255, 255, 255)
+        iconLabel.Font = Enum.Font.GothamBold
+        iconLabel.TextSize = 30
+        iconLabel.Text = "🎃"
+        iconLabel.LayoutOrder = 1
+        iconLabel.Parent = container
+        
+        local distanceLabel = Instance.new("TextLabel")
+        distanceLabel.Name = "Distance"
+        distanceLabel.Size = UDim2.new(0, 180, 0, 40)
+        distanceLabel.BackgroundTransparency = 1
+        distanceLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        distanceLabel.TextStrokeTransparency = 0
+        distanceLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+        distanceLabel.Font = Enum.Font.GothamBold
+        distanceLabel.TextSize = 16
+        distanceLabel.Text = "Target: 0 studs"
+        distanceLabel.TextXAlignment = Enum.TextXAlignment.Left
+        distanceLabel.LayoutOrder = 2
+        distanceLabel.Parent = container
+        
+        espObjects[targetObject] = {
+            billboard = mainBillboard,
+            distanceLabel = distanceLabel
+        }
+        return true
+    end
+
+    local function removeESPForObject(targetObject)
+        if espObjects[targetObject] then
+            espObjects[targetObject].billboard:Destroy()
+            espObjects[targetObject] = nil
+        end
+    end
+
+    local function removeAllESP()
+        for targetObject, esp in pairs(espObjects) do
+            if esp and esp.billboard then 
+                esp.billboard:Destroy() 
+            end
+        end
+        espObjects = {}
+        currentTargets = {}
+    end
+
+    local function updateAllESPDistances()
+        local character = LocalPlayer.Character
+        if not character then return end
+        
+        local hrp = character:FindFirstChild("HumanoidRootPart") or character:FindFirstChild("UpperTorso") or character:FindFirstChild("Torso")
+        if not hrp then return end
+        
+        local hrpPosition = hrp.Position
+        for targetObject, esp in pairs(espObjects) do
+            if targetObject and targetObject.Parent and esp and esp.distanceLabel then
+                local distance = (targetObject.Position - hrpPosition).Magnitude
+                esp.distanceLabel.Text = string.format("Distance: %.1f studs", distance)
+            else
+                removeESPForObject(targetObject)
+            end
+        end
+    end
+
+    local function createESPForAllObjects()
+        if not ESP_ENABLED then return end
+        local targets = findAllTargetPrompts()
+        
+        for _, targetData in ipairs(targets) do
+            if not espObjects[targetData.object] then
+                createESP(targetData.object)
+            end
+        end
+        
+        for targetObject, _ in pairs(espObjects) do
+            local found = false
+            for _, targetData in ipairs(targets) do
+                if targetData.object == targetObject then 
+                    found = true 
+                    break 
+                end
+            end
+            if not found then 
+                removeESPForObject(targetObject) 
+            end
+        end
+        
+        currentTargets = targets
+    end
+
+    local function startESPLoop()
+        if connections.esp then
+            connections.esp:Disconnect()
+        end
+        
+        connections.esp = RunService.Heartbeat:Connect(function()
+            if ESP_ENABLED then 
+                createESPForAllObjects() 
+                updateAllESPDistances()
+            else 
+                if connections.esp then 
+                    connections.esp:Disconnect()
+                    connections.esp = nil
+                    removeAllESP() 
+                end 
+            end
+        end)
+    end
+
+    -- Auto-teleport logic
+    local teleportedObjects = {}
+
+    local function performAutoTeleport()
+        local currentTime = tick()
+        if currentTime - lastTeleportTime < TELEPORT_COOLDOWN then
+            return false
+        end
+        
+        local targets = findAllTargetPrompts()
+        if #targets == 0 then 
+            teleportedObjects = {}
+            return false
+        end
+        
+        for targetObject, _ in pairs(teleportedObjects) do
+            if not targetObject or not targetObject.Parent then
+                teleportedObjects[targetObject] = nil
+            end
+        end
+        
+        local totalObjects = #targets
+        local visitedObjects = 0
+        local newObjects = 0
+        
+        local availableTargets = {}
+        for _, targetData in ipairs(targets) do
+            if teleportedObjects[targetData.object] then
+                visitedObjects = visitedObjects + 1
+            else
+                newObjects = newObjects + 1
+                table.insert(availableTargets, targetData)
+            end
+        end
+        
+        if #availableTargets > 0 then
+            local targetToTeleport = availableTargets[1].object
+            local success = teleportToTarget(targetToTeleport)
+            
+            if success then
+                teleportedObjects[targetToTeleport] = true
+                lastTeleportTime = currentTime
+                
+                task.wait(0.3)
+                local prompt = availableTargets[1].prompt
+                if prompt and prompt.Enabled then
+                    fireProximity(prompt)
+                end
+                
+                return true
+            end
+        else
+            teleportedObjects = {}
+        end
+        
+        return false
+    end
+
+    local function startAutoCollect()
+        if connections.autoCollect then
+            connections.autoCollect:Disconnect()
+            connections.autoCollect = nil
+        end
+        
+        connections.autoCollect = RunService.Heartbeat:Connect(function()
+            if not AUTO_COLLECT_ENABLED then 
+                if connections.autoCollect then 
+                    connections.autoCollect:Disconnect()
+                    connections.autoCollect = nil
+                end 
+                return 
+            end
+            
+            local character = LocalPlayer.Character
+            if not character then return end
+            
+            local hrp = character:FindFirstChild("HumanoidRootPart") or character:FindFirstChild("UpperTorso") or character:FindFirstChild("Torso")
+            if not hrp then return end
+            
+            local targets = findAllTargetPrompts()
+            if #targets == 0 then 
+                teleportedObjects = {}
+                return 
+            end
+            
+            if AUTO_TELEPORT_ENABLED then
+                performAutoTeleport()
+            end
+            
+            if AUTO_FIRE then
+                local hrpPosition = hrp.Position
+                for _, targetData in ipairs(targets) do
+                    local distance = (targetData.object.Position - hrpPosition).Magnitude
+                    if distance <= SCAN_RADIUS and targetData.prompt.Enabled then 
+                        fireProximity(targetData.prompt) 
+                    end
+                end
+            end
+        end)
+    end
+
+    -- Auto Farm функции
+    local function returnToZero()
+        local character = LocalPlayer.Character
+        if not character then return false end
+        
+        local hrp = character:FindFirstChild("HumanoidRootPart")
+        if not hrp then return false end
+        
+        return pcall(function()
+            local humanoid = character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                humanoid:ChangeState(Enum.HumanoidStateType.Flying)
+            end
+            
+            local zeroPosition = Vector3.new(0, 500, 0)
+            hrp.CFrame = CFrame.new(zeroPosition)
+            Workspace.CurrentCamera.CFrame = hrp.CFrame
+            
+            return true
+        end)
+    end
+
+    local function performAutoFarmCycle()
+        if not autoFarmIsActive then return false end
+        
+        local targets = findAllTargetPrompts()
+        if #targets == 0 then 
+            autoFarmProcessedObjects = {}
+            return false
+        end
+        
+        for targetObject, _ in pairs(autoFarmProcessedObjects) do
+            if not targetObject or not targetObject.Parent then
+                autoFarmProcessedObjects[targetObject] = nil
+            end
+        end
+        
+        local unvisitedTargets = {}
+        for _, targetData in ipairs(targets) do
+            if not autoFarmProcessedObjects[targetData.object] then
+                table.insert(unvisitedTargets, targetData)
+            end
+        end
+        
+        if #unvisitedTargets == 0 then
+            autoFarmProcessedObjects = {}
+            returnToZero()
+            return true
+        end
+        
+        local processedAny = false
+        for _, targetData in ipairs(unvisitedTargets) do
+            if not autoFarmIsActive then break end
+            
+            local targetToTeleport = targetData.object
+            local prompt = targetData.prompt
+            
+            local teleportSuccess = teleportToTarget(targetToTeleport)
+            
+            if teleportSuccess then
+                processedAny = true
+                
+                task.wait(0.5)
+                
+                if prompt and prompt.Enabled then
+                    for i = 1, 3 do
+                        fireProximity(prompt)
+                        task.wait(0.1)
+                    end
+                end
+                
+                autoFarmProcessedObjects[targetToTeleport] = true
+                task.wait(TELEPORT_COOLDOWN)
+            end
+        end
+        
+        if processedAny then
+            local remainingTargets = #targets - #autoFarmProcessedObjects
+            if remainingTargets == 0 then
+                task.wait(AUTO_FARM_RETURN_DELAY)
+                returnToZero()
+                autoFarmProcessedObjects = {}
+            end
+            return true
+        end
+        
+        return false
+    end
+
+    local function startAutoFarmCycle()
+        returnToZero()
+        task.wait(2)
+        
+        while true do
+            if not autoFarmIsActive then
+                task.wait(1)
+            else
+                performAutoFarmCycle()
+                task.wait(AUTO_FARM_CHECK_INTERVAL)
+            end
+        end
+    end
+
+    local function initializeAutoFarm()
+        task.spawn(startAutoFarmCycle)
+    end
+
+    -- Movement functions
+    local function updateNoClip()
+        if noclipConnection then
+            noclipConnection:Disconnect()
+            noclipConnection = nil
+        end
+        
+        if NOCLIP_ENABLED then
+            noclipConnection = RunService.Stepped:Connect(function()
+                if NOCLIP_ENABLED then
+                    local character = LocalPlayer.Character
+                    if character then
+                        for _, part in ipairs(character:GetDescendants()) do
+                            if part:IsA("BasePart") then
+                                part.CanCollide = false
+                            end
+                        end
+                    end
+                end
+            end)
+        else
+            local character = LocalPlayer.Character
+            if character then
+                for _, part in ipairs(character:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        part.CanCollide = true
+                    end
+                end
+            end
+        end
+    end
+
+    local function updateFly()
+        if flyConnection then
+            flyConnection:Disconnect()
+            flyConnection = nil
+        end
+        
+        if bodyVelocity then
+            bodyVelocity:Destroy()
+            bodyVelocity = nil
+        end
+        
+        if FLY_ENABLED and LocalPlayer.Character then
+            local root = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+            if not root then return end
+            
+            bodyVelocity = Instance.new("BodyVelocity")
+            bodyVelocity.Name = "FlyVelocity"
+            bodyVelocity.MaxForce = Vector3.new(40000, 40000, 40000)
+            bodyVelocity.Velocity = Vector3.zero
+            bodyVelocity.Parent = root
+            
+            flyConnection = RunService.RenderStepped:Connect(function()
+                if FLY_ENABLED and root and bodyVelocity then
+                    local cam = workspace.CurrentCamera
+                    local dir = Vector3.zero
+                    
+                    if flyKeys.W then dir = dir + cam.CFrame.LookVector end
+                    if flyKeys.S then dir = dir - cam.CFrame.LookVector end
+                    if flyKeys.A then dir = dir - cam.CFrame.RightVector end
+                    if flyKeys.D then dir = dir + cam.CFrame.RightVector end
+                    if flyKeys.Up then dir = dir + Vector3.new(0, 1, 0) end
+                    if flyKeys.Down then dir = dir - Vector3.new(0, 1, 0) end
+                    
+                    if dir.Magnitude > 0 then
+                        bodyVelocity.Velocity = dir.Unit * currentFlySpeed
+                    else
+                        bodyVelocity.Velocity = Vector3.zero
+                    end
+                end
+            end)
+        else
+            if bodyVelocity then
+                bodyVelocity:Destroy()
+                bodyVelocity = nil
+            end
+        end
+    end
+
+    local function updateWalkSpeed()
+        if LocalPlayer.Character then
+            local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                if WALKSPEED_ENABLED then
+                    humanoid.WalkSpeed = currentWalkSpeed
+                else
+                    humanoid.WalkSpeed = defaultWalkSpeed
+                end
+            end
+        end
+    end
+
+    local function updateJumpPower()
+        if LocalPlayer.Character then
+            local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                if JUMPPOWER_ENABLED then
+                    humanoid.JumpPower = currentJumpPower
+                else
+                    humanoid.JumpPower = defaultJumpPower
+                end
+            end
+        end
+    end
+
+    -- Input handling (только для ПК)
+    if not IS_MOBILE then
+        local function handleFlyInput(input, isBeginning)
+            if not FLY_ENABLED then return end
+            
+            local key = input.KeyCode
+            if key == Enum.KeyCode.W then flyKeys.W = isBeginning
+            elseif key == Enum.KeyCode.A then flyKeys.A = isBeginning
+            elseif key == Enum.KeyCode.S then flyKeys.S = isBeginning
+            elseif key == Enum.KeyCode.D then flyKeys.D = isBeginning
+            elseif key == Enum.KeyCode.Space then flyKeys.Up = isBeginning
+            elseif key == Enum.KeyCode.LeftShift then flyKeys.Down = isBeginning end
+        end
+
+        UIS.InputBegan:Connect(function(input, gameProcessed)
+            if gameProcessed then return end
+            handleFlyInput(input, true)
+        end)
+
+        UIS.InputEnded:Connect(function(input)
+            handleFlyInput(input, false)
+        end)
+    end
+
+    -- Ускоренная инициализация GUI
+    local function initializeGUI()
+        if _G.NexusGUIInitialized then return end
+        _G.NexusGUIInitialized = true
+        
+        local Window = Library:CreateWindow({
+            Title = "Nexus v1.0.0",
+            SubTitle = "🍁",
+            TabWidth = 100,
+            Size = UDim2.fromOffset(500, 310),
+            Acrylic = false,
+            Theme = "Dark",
+            MinimizeKey = Enum.KeyCode.LeftAlt
+        })
+
+        local Tabs = {
+            legit = Window:AddTab({ Title = "Legit", Icon = "github" }),
+            farm = Window:AddTab({ Title = "Farm", Icon = "package" }),
+            rage = Window:AddTab({ Title = "Rage", Icon = "venetian-mask" }),
+            settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
+        }
+
+        local Options = Library.Options
+
+        -- Legit Tab
+        Tabs.legit:CreateSection("Aim")
+        
+        local AimBotToggle = Tabs.legit:CreateToggle("AimBot", {
+            Title = "AimBot [In Development]",
+            Description = "Function in development",
+            Default = false
+        })
+        
+        AimBotToggle:OnChanged(function(Value)
+            print("AimBot " .. (Value and "enabled (in development)" or "disabled"))
+        end)
+
+        Tabs.legit:CreateSection("Hitbox Expander")
+        
+        local HitboxToggle = Tabs.legit:CreateToggle("HitboxExpander", {
+            Title = "Hitbox Expander",
+            Default = false
+        })
+        
+        HitboxToggle:OnChanged(function() 
+            le.toggleState(Options.HitboxExpander.Value) 
+        end)
+
+        Tabs.legit:CreateSlider("HitboxSize", {
+            Title = "Hitbox Size",
+            Description = "Hitbox size (5-50)",
+            Default = le.LIMB_SIZE or 10,
+            Min = 5,
+            Max = 50,
+            Rounding = 1,
+            Callback = function(value)
+                le.LIMB_SIZE = value
+                if Options.HitboxExpander.Value then 
+                    le.toggleState(false)
+                    le.toggleState(true)
+                end
+            end
+        })
+
+        Tabs.legit:CreateSlider("HitboxTransparency", {
+            Title = "Hitbox Transparency",
+            Description = "Hitbox transparency",
+            Default = le.LIMB_TRANSPARENCY or 0.5,
+            Min = 0,
+            Max = 1,
+            Rounding = 2,
+            Callback = function(value)
+                le.LIMB_TRANSPARENCY = value
+                if Options.HitboxExpander.Value then 
+                    le.toggleState(false)
+                    le.toggleState(true)
+                end
+            end
+        })
+
+        local CollisionToggle = Tabs.legit:CreateToggle("LimbCollisions", {
+            Title = "Limb Collisions",
+            Default = le.LIMB_CAN_COLLIDE or false
+        })
+        
+        CollisionToggle:OnChanged(function()
+            le.LIMB_CAN_COLLIDE = Options.LimbCollisions.Value
+            if Options.HitboxExpander.Value then 
+                le.toggleState(false)
+                le.toggleState(true)
+            end
+        end)
+
+        local LimbDropdown = Tabs.legit:CreateDropdown("TargetLimb", {
+            Title = "Target Limb",
+            Description = "Select body part to expand",
+            Values = limbs,
+            Default = le.TARGET_LIMB or "HumanoidRootPart",
+            Multi = false,
+            Callback = function(value)
+                le.TARGET_LIMB = value
+                if Options.HitboxExpander.Value then 
+                    le.toggleState(false)
+                    le.toggleState(true)
+                end
+            end
+        })
+
+        if #limbs > 0 then
+            Options.TargetLimb:SetValues(limbs)
+            if not table.find(limbs, le.TARGET_LIMB) then
+                le.TARGET_LIMB = "HumanoidRootPart"
+                Options.TargetLimb:SetValue("HumanoidRootPart")
+            end
+        end
+
+        -- Farm Tab
+        Tabs.farm:CreateSection("Auto Farm")
+
+        local AutoFarmToggle = Tabs.farm:CreateToggle("AutoFarm", {
+            Title = "Auto Farm",
+            Default = false
+        })
+
+        AutoFarmToggle:OnChanged(function()
+            AUTO_FARM_ENABLED = Options.AutoFarm.Value
+            autoFarmIsActive = Options.AutoFarm.Value
+            
+            if AUTO_FARM_ENABLED then
+                initializeAutoFarm()
+            else
+                autoFarmProcessedObjects = {}
+            end
+        end)
+
+        Tabs.farm:CreateSection("AutoCollect")
+        
+        local AutoCollectToggle = Tabs.farm:CreateToggle("AutoCollect", {
+            Title = "AutoCollect",
+            Default = false
+        })
+        
+        AutoCollectToggle:OnChanged(function()
+            AUTO_COLLECT_ENABLED = Options.AutoCollect.Value
+            AUTO_TELEPORT_ENABLED = Options.AutoCollect.Value
+            AUTO_FIRE = Options.AutoCollect.Value
+            
+            if AUTO_COLLECT_ENABLED then
+                startAutoCollect()
+            else
+                teleportedObjects = {}
+            end
+        end)
+
+        local EspChestsToggle = Tabs.farm:CreateToggle("EspChests", {
+            Title = "Esp Chests",
+            Default = false
+        })
+        
+        EspChestsToggle:OnChanged(function()
+            ESP_ENABLED = Options.EspChests.Value
+            
+            if ESP_ENABLED then
+                createESPForAllObjects()
+                startESPLoop()
+            else
+                removeAllESP()
+            end
+        end)
+
+        Tabs.farm:CreateSection("Teleport to the Infinity Stones")
+
+        local GemTeleportDropdown = Tabs.farm:CreateDropdown("TeleportToGems", {
+            Title = "Teleport to gems",
+            Values = {"Time Stone", "Power Stone", "Darkhold"},
+            Multi = false,
+            Default = nil,
+        })
+
+        local isFirstSelection = true
+
+        GemTeleportDropdown:OnChanged(function(Value)
+            if isFirstSelection then
+                isFirstSelection = false
+                return
+            end
+            
+            local position
+            
+            if Value == "Time Stone" then
+                position = Vector3.new(2381.15, 686.16, 659.72)
+            elseif Value == "Power Stone" then
+                position = Vector3.new(-344.59, 697.17, 1901.58)
+            elseif Value == "Darkhold" then
+                position = Vector3.new(-2818.04, 1050.64, 648.63)
+            end
+            
+            if position then
+                teleportToPosition(position)
+            end
+        end)
+
+        -- Rage Tab
+        Tabs.rage:CreateSection("Movement")
+        
+        local NoClipToggle = Tabs.rage:CreateToggle("NoClip", {
+            Title = "NoClip",
+            Description = "Disables collision with objects",
+            Default = false
+        })
+        
+        NoClipToggle:OnChanged(function(Value)
+            NOCLIP_ENABLED = Value
+            updateNoClip()
+        end)
+
+        local FlyToggle = Tabs.rage:CreateToggle("Fly", {
+            Title = "Fly",
+            Description = "Allows flying in any direction",
+            Default = false
+        })
+        
+        FlyToggle:OnChanged(function(Value)
+            FLY_ENABLED = Value
+            updateFly()
+        end)
+
+        local WalkSpeedToggle = Tabs.rage:CreateToggle("WalkSpeed", {
+            Title = "Walk Speed",
+            Description = "Changes character movement speed",
+            Default = false
+        })
+        
+        WalkSpeedToggle:OnChanged(function(Value)
+            WALKSPEED_ENABLED = Value
+            updateWalkSpeed()
+        end)
+
+        local JumpPowerToggle = Tabs.rage:CreateToggle("JumpPower", {
+            Title = "Jump Power",
+            Description = "Changes character jump power",
+            Default = false
+        })
+        
+        JumpPowerToggle:OnChanged(function(Value)
+            JUMPPOWER_ENABLED = Value
+            updateJumpPower()
+        end)
+
+        Tabs.rage:CreateSection("Setting up functions")
+
+        Tabs.rage:CreateSlider("FlySpeed", {
+            Title = "Fly Speed",
+            Description = "Fly speed (1-200)",
+            Default = 50,
+            Min = 1,
+            Max = 200,
+            Rounding = 1,
+            Callback = function(value)
+                currentFlySpeed = value
+            end
+        })
+        
+        Tabs.rage:CreateSlider("WalkSpeedValue", {
+            Title = "Walk Speed Value",
+            Description = "Movement speed (0-100)",
+            Default = 16,
+            Min = 0,
+            Max = 100,
+            Rounding = 1,
+            Callback = function(value)
+                currentWalkSpeed = value
+                if WALKSPEED_ENABLED then
+                    updateWalkSpeed()
+                end
+            end
+        })
+
+        Tabs.rage:CreateSlider("JumpPowerValue", {
+            Title = "Jump Power Value",
+            Description = "Jump power (1-10000)",
+            Default = 50,
+            Min = 1,
+            Max = 10000,
+            Rounding = 1,
+            Callback = function(value)
+                currentJumpPower = value
+                if JUMPPOWER_ENABLED then
+                    updateJumpPower()
+                end
+            end
+        })
+
+        SaveManager:SetLibrary(Library)
+        InterfaceManager:SetLibrary(Library)
+        SaveManager:IgnoreThemeSettings()
+        SaveManager:SetIgnoreIndexes({})
+        InterfaceManager:SetFolder("FluentScriptHub")
+        SaveManager:SetFolder("FluentScriptHub/specific-game")
+        InterfaceManager:BuildInterfaceSection(Tabs.settings)
+        SaveManager:BuildConfigSection(Tabs.settings)
+
+        Window:SelectTab(1)
+        SaveManager:LoadAutoloadConfig()
+        
+        local loadTime = tick() - startTime
+        Library:Notify({
+            Title = "Nexus",
+            Content = "Interface loaded successfully! (" .. string.format("%.2f", loadTime) .. "s)",
+            Duration = 5
+        })
+        
+        -- Для мобильных устройств скрываем основной интерфейс
+        if IS_MOBILE then
+            Window.Enabled = false
+        end
+    end
+
+    -- Ускоренная инициализация
+    local function fullInitialization()
+        if _G.NexusGUIInitialized then return end
+        
+        -- Быстрая инициализация в отдельном потоке
+        task.spawn(function()
+            if LocalPlayer.Character then
+                updateLimbsList()
+            end
+            
+            local characterConnection
+            characterConnection = LocalPlayer.CharacterAdded:Connect(function(character)
+                task.wait(1)
+                updateLimbsList()
+                teleportedObjects = {}
+                autoFarmProcessedObjects = {}
+                
+                NOCLIP_ENABLED = false
+                FLY_ENABLED = false
+                
+                updateNoClip()
+                updateFly()
+                
+                if WALKSPEED_ENABLED then
+                    updateWalkSpeed()
+                end
+                if JUMPPOWER_ENABLED then
+                    updateJumpPower()
+                end
+                
+                if AUTO_FARM_ENABLED then
+                    task.wait(2)
+                    returnToZero()
+                end
+            end)
+            
+            initializeGUI()
+            
+            -- Инициализируем мобильный интерфейс если нужно
+            if IS_MOBILE then
+                initializeMobileInterface()
+            end
+            
+            print("Nexus Loaded - Ready to use")
+            if IS_MOBILE then
+                print("Mobile interface activated")
+            end
+        end)
+    end
+
+    -- Запуск
+    fullInitialization()
+end
