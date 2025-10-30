@@ -70,33 +70,34 @@ local mobileFlyControls = {
     down = false
 }
 
--- Переменные для мобильного джойстика
+-- Переменные для мобильного управления полетом
 local mobileJoystick, mobileJoystickGui, joystickActive, joystickPosition, joystickStart
+local upArrow, downArrow, flyControlsGui
 
--- Функция создания мобильного джойстика для полета
+-- Функция создания мобильного управления полетом
 local function createMobileFlyControls()
-    if mobileJoystickGui then mobileJoystickGui:Destroy() end
+    if flyControlsGui then flyControlsGui:Destroy() end
     
-    mobileJoystickGui = Instance.new("ScreenGui")
-    mobileJoystickGui.Name = "NexusMobileFlyJoystick"
-    mobileJoystickGui.ResetOnSpawn = false
-    mobileJoystickGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    mobileJoystickGui.Enabled = false -- Изначально выключен
-    mobileJoystickGui.Parent = game:GetService("CoreGui")
+    flyControlsGui = Instance.new("ScreenGui")
+    flyControlsGui.Name = "NexusMobileFlyControls"
+    flyControlsGui.ResetOnSpawn = false
+    flyControlsGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    flyControlsGui.Enabled = false -- Изначально выключен
+    flyControlsGui.Parent = game:GetService("CoreGui")
     
-    -- Джойстик для движения
+    -- Джойстик для горизонтального движения
     mobileJoystick = Instance.new("Frame")
     mobileJoystick.Name = "MobileJoystick"
-    mobileJoystick.Size = UDim2.new(0, 150, 0, 150)
-    mobileJoystick.Position = UDim2.new(0, 50, 1, -200)
+    mobileJoystick.Size = UDim2.new(0, 120, 0, 120)
+    mobileJoystick.Position = UDim2.new(0, 50, 1, -180)
     mobileJoystick.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
     mobileJoystick.BackgroundTransparency = 0.4
     mobileJoystick.BorderSizePixel = 0
-    mobileJoystick.Visible = false -- Показывается только при включенном полете
-    mobileJoystick.Parent = mobileJoystickGui
+    mobileJoystick.Visible = false
+    mobileJoystick.Parent = flyControlsGui
     
     local joystickCorner = Instance.new("UICorner")
-    joystickCorner.CornerRadius = UDim.new(0, 75)
+    joystickCorner.CornerRadius = UDim.new(0, 60)
     joystickCorner.Parent = mobileJoystick
     
     local joystickStroke = Instance.new("UIStroke")
@@ -107,39 +108,83 @@ local function createMobileFlyControls()
     -- Центр джойстика
     local joystickCenter = Instance.new("Frame")
     joystickCenter.Name = "JoystickCenter"
-    joystickCenter.Size = UDim2.new(0, 50, 0, 50)
-    joystickCenter.Position = UDim2.new(0.5, -25, 0.5, -25)
+    joystickCenter.Size = UDim2.new(0, 40, 0, 40)
+    joystickCenter.Position = UDim2.new(0.5, -20, 0.5, -20)
     joystickCenter.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     joystickCenter.BackgroundTransparency = 0.3
     joystickCenter.BorderSizePixel = 0
     joystickCenter.Parent = mobileJoystick
     
     local centerCorner = Instance.new("UICorner")
-    centerCorner.CornerRadius = UDim.new(0, 25)
+    centerCorner.CornerRadius = UDim.new(0, 20)
     centerCorner.Parent = joystickCenter
     
-    -- Обработчики для джойстика
+    -- Стрелка вверх для подъема
+    upArrow = Instance.new("TextButton")
+    upArrow.Name = "UpArrow"
+    upArrow.Size = UDim2.new(0, 60, 0, 60)
+    upArrow.Position = UDim2.new(1, -80, 0, 50)
+    upArrow.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    upArrow.BackgroundTransparency = 0.4
+    upArrow.Text = "↑"
+    upArrow.TextColor3 = Color3.fromRGB(255, 255, 255)
+    upArrow.Font = Enum.Font.GothamBold
+    upArrow.TextSize = 24
+    upArrow.Visible = false
+    upArrow.Parent = flyControlsGui
+    
+    local upCorner = Instance.new("UICorner")
+    upCorner.CornerRadius = UDim.new(0, 30)
+    upCorner.Parent = upArrow
+    
+    local upStroke = Instance.new("UIStroke")
+    upStroke.Color = Color3.fromRGB(255, 255, 255)
+    upStroke.Thickness = 2
+    upStroke.Parent = upArrow
+    
+    -- Стрелка вниз для спуска
+    downArrow = Instance.new("TextButton")
+    downArrow.Name = "DownArrow"
+    downArrow.Size = UDim2.new(0, 60, 0, 60)
+    downArrow.Position = UDim2.new(1, -80, 0, 120)
+    downArrow.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    downArrow.BackgroundTransparency = 0.4
+    downArrow.Text = "↓"
+    downArrow.TextColor3 = Color3.fromRGB(255, 255, 255)
+    downArrow.Font = Enum.Font.GothamBold
+    downArrow.TextSize = 24
+    downArrow.Visible = false
+    downArrow.Parent = flyControlsGui
+    
+    local downCorner = Instance.new("UICorner")
+    downCorner.CornerRadius = UDim.new(0, 30)
+    downCorner.Parent = downArrow
+    
+    local downStroke = Instance.new("UIStroke")
+    downStroke.Color = Color3.fromRGB(255, 255, 255)
+    downStroke.Thickness = 2
+    downStroke.Parent = downArrow
+    
+    -- Обработчики для джойстика (только горизонтальное движение)
     mobileJoystick.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.Touch then
             joystickActive = true
             joystickStart = input.Position
             joystickPosition = mobileJoystick.Position
-            joystickCenter.BackgroundTransparency = 0.1 -- Визуальная обратная связь
+            joystickCenter.BackgroundTransparency = 0.1
         end
     end)
     
     mobileJoystick.InputEnded:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.Touch then
             joystickActive = false
-            -- Сбрасываем управление
+            -- Сбрасываем горизонтальное управление
             mobileFlyControls.forward = false
             mobileFlyControls.backward = false
             mobileFlyControls.left = false
             mobileFlyControls.right = false
-            mobileFlyControls.up = false
-            mobileFlyControls.down = false
-            -- Возвращаем центр джойстика в исходное положение
-            joystickCenter.Position = UDim2.new(0.5, -25, 0.5, -25)
+            -- Возвращаем центр джойстика
+            joystickCenter.Position = UDim2.new(0.5, -20, 0.5, -20)
             joystickCenter.BackgroundTransparency = 0.3
         end
     end)
@@ -147,66 +192,57 @@ local function createMobileFlyControls()
     UIS.InputChanged:Connect(function(input)
         if joystickActive and input.UserInputType == Enum.UserInputType.Touch and FLY_ENABLED then
             local delta = (input.Position - joystickStart)
-            local maxDistance = 40 -- Максимальное расстояние перемещения центра
+            local maxDistance = 30
             
             -- Ограничиваем движение центра джойстика
             local offsetX = math.clamp(delta.X, -maxDistance, maxDistance)
             local offsetY = math.clamp(delta.Y, -maxDistance, maxDistance)
             
-            joystickCenter.Position = UDim2.new(0.5, -25 + offsetX, 0.5, -25 + offsetY)
+            joystickCenter.Position = UDim2.new(0.5, -20 + offsetX, 0.5, -20 + offsetY)
             
             -- Определяем направление движения с мертвой зоной
-            local deadZone = 15 -- мертвая зона
+            local deadZone = 10
             
+            -- Только горизонтальное движение (без изменения высоты)
             mobileFlyControls.forward = (offsetY < -deadZone)
             mobileFlyControls.backward = (offsetY > deadZone)
             mobileFlyControls.left = (offsetX < -deadZone)
             mobileFlyControls.right = (offsetX > deadZone)
-            
-            -- Управление высотой через вертикальные жесты
-            local verticalDeadZone = 20
-            mobileFlyControls.up = (offsetY < -verticalDeadZone * 1.5) -- Сильное движение вверх
-            mobileFlyControls.down = (offsetY > verticalDeadZone * 1.5) -- Сильное движение вниз
         end
     end)
     
-    return mobileJoystick
+    -- Обработчики для стрелок высоты
+    upArrow.MouseButton1Down:Connect(function()
+        mobileFlyControls.up = true
+        upArrow.BackgroundTransparency = 0.1
+    end)
+    
+    upArrow.MouseButton1Up:Connect(function()
+        mobileFlyControls.up = false
+        upArrow.BackgroundTransparency = 0.4
+    end)
+    
+    downArrow.MouseButton1Down:Connect(function()
+        mobileFlyControls.down = true
+        downArrow.BackgroundTransparency = 0.1
+    end)
+    
+    downArrow.MouseButton1Up:Connect(function()
+        mobileFlyControls.down = false
+        downArrow.BackgroundTransparency = 0.4
+    end)
+    
+    return mobileJoystick, upArrow, downArrow
 end
 
--- Функция показа/скрытия мобильного джойстика
+-- Функция показа/скрытия мобильного управления полетом
 local function toggleMobileFlyControls(visible)
-    if mobileJoystick then
+    if mobileJoystick and upArrow and downArrow then
         mobileJoystick.Visible = visible
-        mobileJoystickGui.Enabled = visible
+        upArrow.Visible = visible
+        downArrow.Visible = visible
+        flyControlsGui.Enabled = visible
     end
-end
-
--- Функция переключения интерфейса
-local function toggleMobileInterface()
-    if not Library or not Library.Window then return end
-    
-    isMobileInterfaceVisible = not isMobileInterfaceVisible
-    Library.Window.Enabled = isMobileInterfaceVisible
-    
-    -- Обновляем внешний вид кнопки
-    if mobileToggleButton then
-        if isMobileInterfaceVisible then
-            mobileToggleButton.Text = "X"
-            mobileToggleButton.TextColor3 = Color3.fromRGB(255, 50, 50)
-            mobileToggleButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-        else
-            mobileToggleButton.Text = "N"
-            mobileToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-            mobileToggleButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-        end
-    end
-    
-    -- Уведомление
-    Library:Notify({
-        Title = "Nexus Mobile",
-        Content = "Interface " .. (isMobileInterfaceVisible and "opened" or "closed"),
-        Duration = 2
-    })
 end
 
 local function createMobileToggleButton()
@@ -847,7 +883,7 @@ local function updateNoClip()
     end
 end
 
--- ИСПРАВЛЕННАЯ функция Fly с поддержкой мобильного джойстика
+-- ИСПРАВЛЕННАЯ функция Fly с раздельным управлением
 local function updateFly()
     if flyConnection then
         flyConnection:Disconnect()
@@ -863,7 +899,7 @@ local function updateFly()
         local root = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
         if not root then return end
         
-        -- Создаем джойстик для мобильных
+        -- Создаем управление для мобильных
         if IS_MOBILE then
             createMobileFlyControls()
             toggleMobileFlyControls(true)
@@ -881,13 +917,23 @@ local function updateFly()
                 local dir = Vector3.zero
                 
                 if IS_MOBILE then
-                    -- Мобильное управление через джойстик
+                    -- Горизонтальное движение через джойстик
                     if mobileFlyControls.forward then dir = dir + cam.CFrame.LookVector end
                     if mobileFlyControls.backward then dir = dir - cam.CFrame.LookVector end
                     if mobileFlyControls.left then dir = dir - cam.CFrame.RightVector end
                     if mobileFlyControls.right then dir = dir + cam.CFrame.RightVector end
+                    
+                    -- Вертикальное движение через стрелки
                     if mobileFlyControls.up then dir = dir + Vector3.new(0, 1, 0) end
                     if mobileFlyControls.down then dir = dir - Vector3.new(0, 1, 0) end
+                    
+                    -- Убираем вертикальную составляющую из горизонтального движения
+                    if mobileFlyControls.forward or mobileFlyControls.backward or mobileFlyControls.left or mobileFlyControls.right then
+                        dir = Vector3.new(dir.X, 0, dir.Z).Unit
+                        if dir.Magnitude > 0 then
+                            dir = dir + Vector3.new(0, dir.Y, 0)
+                        end
+                    end
                 else
                     -- ПК управление
                     if flyKeys.W then dir = dir + cam.CFrame.LookVector end
@@ -906,7 +952,7 @@ local function updateFly()
             end
         end)
     else
-        -- Выключаем джойстик для мобильных
+        -- Выключаем управление для мобильных
         if IS_MOBILE then
             toggleMobileFlyControls(false)
             -- Сбрасываем состояние управления
@@ -921,7 +967,6 @@ local function updateFly()
         end
     end
 end
-
 -- Input handling для ПК
 local function handleFlyInput(input, isBeginning)
     if not FLY_ENABLED then return end
@@ -1002,7 +1047,7 @@ local function initializeGUI()
     _G.NexusGUIInitialized = true
     
     -- Определяем размер окна в зависимости от устройства
-    local windowSize = IS_MOBILE and UDim2.fromOffset(450, 270) or UDim2.fromOffset(500, 310)
+    local windowSize = IS_MOBILE and UDim2.fromOffset(400, 250) or UDim2.fromOffset(500, 310)
     
     local Window = Library:CreateWindow({
         Title = "Nexus v1.0.0",
