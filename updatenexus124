@@ -93,20 +93,20 @@ local function createMobileToggleButton()
     mobileToggleGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     mobileToggleGui.Parent = game:GetService("CoreGui")
     
-    -- Основная кнопка с буквой N
-    mobileToggleButton = Instance.new("TextButton")
-    mobileToggleButton.Name = "MobileToggleButton"
-    mobileToggleButton.Size = UDim2.new(0, 60, 0, 60)
-    mobileToggleButton.Position = UDim2.new(1, -70, 0.5, -30)
-    mobileToggleButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    mobileToggleButton.Text = "N"
-    mobileToggleButton.TextColor3 = Color3.fromRGB(255, 255, 0)
-    mobileToggleButton.Font = Enum.Font.GothamBold
-    mobileToggleButton.TextSize = 32
-    mobileToggleButton.TextStrokeTransparency = 0.5
-    mobileToggleButton.TextStrokeColor3 = Color3.fromRGB(255, 255, 255)
-    mobileToggleButton.ZIndex = 100
-    mobileToggleButton.Parent = mobileToggleGui
+    -- Основная кнопка с буквой N (менее жирная)
+mobileToggleButton = Instance.new("TextButton")
+mobileToggleButton.Name = "MobileToggleButton"
+mobileToggleButton.Size = UDim2.new(0, 60, 0, 60)
+mobileToggleButton.Position = UDim2.new(1, -70, 0.5, -30)
+mobileToggleButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+mobileToggleButton.Text = "N"
+mobileToggleButton.TextColor3 = Color3.fromRGB(255, 255, 0)
+mobileToggleButton.Font = Enum.Font.GothamBold  -- Менее жирный чем GothamBlack
+mobileToggleButton.TextSize = 32
+mobileToggleButton.TextStrokeTransparency = 0.5  -- Полупрозрачная обводка
+mobileToggleButton.TextStrokeColor3 = Color3.fromRGB(255, 255, 255)
+mobileToggleButton.ZIndex = 100
+mobileToggleButton.Parent = mobileToggleGui
     
     -- Скругленные углы
     local corner = Instance.new("UICorner")
