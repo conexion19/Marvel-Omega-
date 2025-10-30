@@ -579,7 +579,7 @@ local function processAllAutoFarmObjects()
             if prompt and prompt.Enabled then
                 for i = 1, 3 do
                     fireProximity(prompt)
-                    
+                    task.wait(0.1)
                 end
             end
             
