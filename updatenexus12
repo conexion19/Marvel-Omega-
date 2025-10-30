@@ -54,10 +54,8 @@ local AUTO_FARM_RETURN_DELAY = 1
 local AUTO_FARM_TELEPORT_DELAY = 0.3
 local AUTO_FARM_CHECK_INTERVAL = 2
 
-local flyKeys = { W = false, A = false, S = false, D = false, Up = false, Down = false }
+local flyKeys = { W = false, A = false, S = false, D = false, Up = false, Down = false }     
 
--- Функции для мобильной кнопки
--- Функции для мобильной кнопки
 local function createMobileToggleButton()
     if mobileToggleGui then mobileToggleGui:Destroy() end
     
