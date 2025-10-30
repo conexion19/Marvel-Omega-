@@ -60,6 +60,7 @@ local flyKeys = {
     Up = false, Down = false 
 }
 
+-- Мобильное управление полетом
 local mobileFlyControls = {
     forward = false,
     backward = false,
@@ -84,46 +85,45 @@ local function createMobileFlyControls()
     flyControlsGui.Enabled = false -- Изначально выключен
     flyControlsGui.Parent = game:GetService("CoreGui")
     
-    -- Джойстик для горизонтального движения (в 2 раза больше и прозрачный)
+    -- Джойстик для горизонтального движения
     mobileJoystick = Instance.new("Frame")
     mobileJoystick.Name = "MobileJoystick"
-    mobileJoystick.Size = UDim2.new(0, 240, 0, 240) -- Увеличен в 2 раза (было 120x120)
-    mobileJoystick.Position = UDim2.new(0, 80, 1, -300) -- Смещен вниз и левее (было 50, -180)
+    mobileJoystick.Size = UDim2.new(0, 120, 0, 120)
+    mobileJoystick.Position = UDim2.new(0, 50, 1, -180)
     mobileJoystick.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    mobileJoystick.BackgroundTransparency = 0.7 -- Более прозрачный (было 0.4)
+    mobileJoystick.BackgroundTransparency = 0.4
     mobileJoystick.BorderSizePixel = 0
     mobileJoystick.Visible = false
     mobileJoystick.Parent = flyControlsGui
     
     local joystickCorner = Instance.new("UICorner")
-    joystickCorner.CornerRadius = UDim.new(0, 120) -- Увеличен радиус скругления
+    joystickCorner.CornerRadius = UDim.new(0, 60)
     joystickCorner.Parent = mobileJoystick
     
     local joystickStroke = Instance.new("UIStroke")
     joystickStroke.Color = Color3.fromRGB(255, 255, 255)
     joystickStroke.Thickness = 2
-    joystickStroke.Transparency = 0.3 -- Полупрозрачная обводка
     joystickStroke.Parent = mobileJoystick
     
-    -- Центр джойстика (также увеличен)
+    -- Центр джойстика
     local joystickCenter = Instance.new("Frame")
     joystickCenter.Name = "JoystickCenter"
-    joystickCenter.Size = UDim2.new(0, 80, 0, 80) -- Увеличен в 2 раза (было 40x40)
-    joystickCenter.Position = UDim2.new(0.5, -40, 0.5, -40) -- Скорректирована позиция
+    joystickCenter.Size = UDim2.new(0, 40, 0, 40)
+    joystickCenter.Position = UDim2.new(0.5, -20, 0.5, -20)
     joystickCenter.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    joystickCenter.BackgroundTransparency = 0.7 -- Более прозрачный центр
+    joystickCenter.BackgroundTransparency = 0.3
     joystickCenter.BorderSizePixel = 0
     joystickCenter.Parent = mobileJoystick
     
     local centerCorner = Instance.new("UICorner")
-    centerCorner.CornerRadius = UDim.new(0, 40) -- Увеличен радиус скругления
+    centerCorner.CornerRadius = UDim.new(0, 20)
     centerCorner.Parent = joystickCenter
     
-    -- Стрелка вверх для подъема (смещена левее)
+    -- Стрелка вверх для подъема (меньше и выше/левее)
     upArrow = Instance.new("TextButton")
     upArrow.Name = "UpArrow"
-    upArrow.Size = UDim2.new(0, 50, 0, 50)
-    upArrow.Position = UDim2.new(1, -180, 0, 80) -- Смещена левее (было -150)
+    upArrow.Size = UDim2.new(0, 50, 0, 50) -- Уменьшен размер
+    upArrow.Position = UDim2.new(1, -150, 0, 80) -- Выше и левее
     upArrow.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
     upArrow.BackgroundTransparency = 0.4
     upArrow.Text = "↑"
@@ -142,11 +142,11 @@ local function createMobileFlyControls()
     upStroke.Thickness = 2
     upStroke.Parent = upArrow
     
-    -- Стрелка вниз для спуска (смещена левее)
+    -- Стрелка вниз для спуска (меньше и выше/левее)
     downArrow = Instance.new("TextButton")
     downArrow.Name = "DownArrow"
-    downArrow.Size = UDim2.new(0, 50, 0, 50)
-    downArrow.Position = UDim2.new(1, -180, 0, 140) -- Смещена левее (было -150)
+    downArrow.Size = UDim2.new(0, 50, 0, 50) -- Уменьшен размер
+    downArrow.Position = UDim2.new(1, -150, 0, 140) -- Выше и левее
     downArrow.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
     downArrow.BackgroundTransparency = 0.4
     downArrow.Text = "↓"
@@ -184,24 +184,24 @@ local function createMobileFlyControls()
             mobileFlyControls.left = false
             mobileFlyControls.right = false
             -- Возвращаем центр джойстика
-            joystickCenter.Position = UDim2.new(0.5, -40, 0.5, -40) -- Скорректирована позиция
-            joystickCenter.BackgroundTransparency = 0.7
+            joystickCenter.Position = UDim2.new(0.5, -20, 0.5, -20)
+            joystickCenter.BackgroundTransparency = 0.3
         end
     end)
     
-    game:GetService("UserInputService").InputChanged:Connect(function(input)
+    UIS.InputChanged:Connect(function(input)
         if joystickActive and input.UserInputType == Enum.UserInputType.Touch and FLY_ENABLED then
             local delta = (input.Position - joystickStart)
-            local maxDistance = 60 -- Увеличен максимальный радиус (было 30)
+            local maxDistance = 30
             
             -- Ограничиваем движение центра джойстика
             local offsetX = math.clamp(delta.X, -maxDistance, maxDistance)
             local offsetY = math.clamp(delta.Y, -maxDistance, maxDistance)
             
-            joystickCenter.Position = UDim2.new(0.5, -40 + offsetX, 0.5, -40 + offsetY) -- Скорректирована позиция
+            joystickCenter.Position = UDim2.new(0.5, -20 + offsetX, 0.5, -20 + offsetY)
             
             -- Определяем направление движения с мертвой зоной
-            local deadZone = 20 -- Увеличенная мертвая зона (было 10)
+            local deadZone = 10
             
             -- Только горизонтальное движение (без изменения высоты)
             mobileFlyControls.forward = (offsetY < -deadZone)
@@ -262,83 +262,15 @@ end
 
 -- Функция показа/скрытия мобильного управления полетом
 local function toggleMobileFlyControls(visible)
-    if flyControlsGui then
+    if mobileJoystick and upArrow and downArrow then
+        mobileJoystick.Visible = visible
+        upArrow.Visible = visible
+        downArrow.Visible = visible
         flyControlsGui.Enabled = visible
     end
-    if mobileJoystick then
-        mobileJoystick.Visible = visible
-    end
-    if upArrow then
-        upArrow.Visible = visible
-    end
-    if downArrow then
-        downArrow.Visible = visible
-    end
 end
 
--- Переменные для кнопки N и глазка
-local mobileToggleButton, eyeToggleButton, mobileToggleGui
-
--- Функция создания глазка (появляется после зажатия кнопки N)
-local function createEyeToggleButton()
-    if eyeToggleButton then eyeToggleButton:Destroy() end
-    
-    eyeToggleButton = Instance.new("TextButton")
-    eyeToggleButton.Name = "EyeToggleButton"
-    eyeToggleButton.Size = UDim2.new(0, 60, 0, 60)
-    eyeToggleButton.Position = mobileToggleButton and mobileToggleButton.Position or UDim2.new(0.6, -30, 0, 20)
-    eyeToggleButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    eyeToggleButton.Text = "👁"
-    eyeToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    eyeToggleButton.Font = Enum.Font.GothamBold
-    eyeToggleButton.TextSize = 24
-    eyeToggleButton.TextStrokeTransparency = 0.5
-    eyeToggleButton.TextStrokeColor3 = Color3.fromRGB(255, 255, 255)
-    eyeToggleButton.ZIndex = 100
-    eyeToggleButton.Visible = false -- Изначально скрыт
-    eyeToggleButton.Parent = mobileToggleGui
-    
-    -- Скругленные углы
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 20)
-    corner.Parent = eyeToggleButton
-    
-    -- Белая обводка
-    local stroke = Instance.new("UIStroke")
-    stroke.Color = Color3.fromRGB(255, 255, 255)
-    stroke.Thickness = 2
-    stroke.Parent = eyeToggleButton
-    
-    -- Обработчик клика для глазка
-    eyeToggleButton.MouseButton1Click:Connect(function()
-        if toggleMobileInterface then
-            toggleMobileInterface()
-        end
-    end)
-    
-    -- Анимация при нажатии
-    eyeToggleButton.MouseButton1Down:Connect(function()
-        local tweenInfo = TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-        local tween = game:GetService("TweenService"):Create(eyeToggleButton, tweenInfo, {
-            Size = UDim2.new(0, 55, 0, 55),
-            BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-        })
-        tween:Play()
-    end)
-    
-    eyeToggleButton.MouseButton1Up:Connect(function()
-        local tweenInfo = TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-        local tween = game:GetService("TweenService"):Create(eyeToggleButton, tweenInfo, {
-            Size = UDim2.new(0, 60, 0, 60),
-            BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-        })
-        tween:Play()
-    end)
-    
-    return eyeToggleButton
-end
-
--- Функция создания кнопки N (появляется первой)
+-- Функция создания кнопки N (в середине чуть правее сверху)
 local function createMobileToggleButton()
     if mobileToggleGui then mobileToggleGui:Destroy() end
     
@@ -348,7 +280,7 @@ local function createMobileToggleButton()
     mobileToggleGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     mobileToggleGui.Parent = game:GetService("CoreGui")
     
-    -- Основная кнопка с буквой N (появляется первой)
+    -- Основная кнопка с буквой N (в середине чуть правее сверху)
     mobileToggleButton = Instance.new("TextButton")
     mobileToggleButton.Name = "MobileToggleButton"
     mobileToggleButton.Size = UDim2.new(0, 60, 0, 60)
@@ -374,14 +306,9 @@ local function createMobileToggleButton()
     stroke.Thickness = 2
     stroke.Parent = mobileToggleButton
     
-    -- Переменные для перемещения и таймеров
+    -- Переменные для перемещения
     local isDragging = false
     local dragStart, buttonStart
-    local pressStartTime = 0
-    local isLongPress = false
-    
-    local UIS = game:GetService("UserInputService")
-    local TweenService = game:GetService("TweenService")
     
     -- Функция начала перемещения (только для touch)
     local function startDrag(input)
@@ -401,24 +328,12 @@ local function createMobileToggleButton()
     mobileToggleButton.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.Touch then
             startDrag(input)
-        elseif input.UserInputType == Enum.UserInputType.MouseButton1 then
-            -- Запоминаем время начала нажатия для длительного зажатия
-            pressStartTime = tick()
-            isLongPress = false
         end
     end)
     
     mobileToggleButton.InputEnded:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.Touch and isDragging then
             endDrag()
-        elseif input.UserInputType == Enum.UserInputType.MouseButton1 then
-            -- Если это было короткое нажатие (не долгое) - переключаем интерфейс
-            if not isLongPress and (tick() - pressStartTime) < 0.5 then
-                if toggleMobileInterface then
-                    toggleMobileInterface()
-                end
-            end
-            isLongPress = false
         end
     end)
     
@@ -427,14 +342,33 @@ local function createMobileToggleButton()
         if isDragging and input.UserInputType == Enum.UserInputType.Touch then
             local delta = input.Position - dragStart
             
-            local newX = math.clamp(buttonStart.X.Offset + delta.X, 0, game:GetService("CoreGui").AbsoluteSize.X - mobileToggleButton.AbsoluteSize.X)
-            local newY = math.clamp(buttonStart.Y.Offset + delta.Y, 0, game:GetService("CoreGui").AbsoluteSize.Y - mobileToggleButton.AbsoluteSize.Y)
+            local newX = math.clamp(buttonStart.X.Offset + delta.X, 0, mobileToggleButton.AbsoluteSize.X)
+            local newY = math.clamp(buttonStart.Y.Offset + delta.Y, 0, mobileToggleButton.AbsoluteSize.Y)
             
-            mobileToggleButton.Position = UDim2.new(0, newX, 0, newY)
+            mobileToggleButton.Position = UDim2.new(buttonStart.X.Scale, newX, buttonStart.Y.Scale, newY)
         end
     end)
     
-    -- Обработка длительного зажатия (для появления глазка)
+    -- Двойной тап для сброса позиции (только touch)
+    local lastTapTime = 0
+    mobileToggleButton.MouseButton1Click:Connect(function()
+        local currentTime = tick()
+        if currentTime - lastTapTime < 0.5 then
+            -- Двойной тап - сброс позиции
+            mobileToggleButton.Position = UDim2.new(0.6, -30, 0, 20)
+            Library:Notify({
+                Title = "Nexus Mobile",
+                Content = "Button position reset",
+                Duration = 2
+            })
+        else
+            -- Одинарный тап - переключение интерфейса
+            toggleMobileInterface()
+        end
+        lastTapTime = currentTime
+    end)
+    
+    -- Анимация при нажатии
     mobileToggleButton.MouseButton1Down:Connect(function()
         if not isDragging then
             local tweenInfo = TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
@@ -443,25 +377,6 @@ local function createMobileToggleButton()
                 BackgroundColor3 = Color3.fromRGB(20, 20, 20)
             })
             tween:Play()
-            
-            -- Запускаем проверку длительного нажатия
-            task.spawn(function()
-                local startTime = tick()
-                while UIS:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) do
-                    if (tick() - startTime) > 0.5 then -- Долгое нажатие (0.5 секунды)
-                        isLongPress = true
-                        -- Создаем глазок и скрываем кнопку N
-                        if not eyeToggleButton then
-                            createEyeToggleButton()
-                        end
-                        mobileToggleButton.Visible = false
-                        eyeToggleButton.Visible = true
-                        eyeToggleButton.Position = mobileToggleButton.Position
-                        break
-                    end
-                    task.wait()
-                end
-            end)
         end
     end)
     
@@ -476,63 +391,99 @@ local function createMobileToggleButton()
         end
     end)
     
-    -- Двойной тап для сброса позиции (только touch)
-    local lastTapTime = 0
-    mobileToggleButton.MouseButton1Click:Connect(function()
-        local currentTime = tick()
-        if currentTime - lastTapTime < 0.5 then
-            -- Двойной тап - сброс позиции
-            mobileToggleButton.Position = UDim2.new(0.6, -30, 0, 20)
-            if eyeToggleButton then
-                eyeToggleButton.Position = mobileToggleButton.Position
-            end
-            if Library and Library.Notify then
-                Library:Notify({
-                    Title = "Nexus Mobile",
-                    Content = "Button position reset",
-                    Duration = 2
-                })
-            end
-        end
-        lastTapTime = currentTime
-    end)
-    
     return mobileToggleButton
 end
 
--- Функция для показа/скрытия кнопки N и глазка
-local function toggleMobileToggleButton(visible)
-    if mobileToggleButton then
-        mobileToggleButton.Visible = visible
+-- ИСПРАВЛЕННАЯ функция Fly с раздельным управлением
+local function updateFly()
+    if flyConnection then
+        flyConnection:Disconnect()
+        flyConnection = nil
     end
-    if eyeToggleButton then
-        eyeToggleButton.Visible = visible
+    
+    if bodyVelocity then
+        bodyVelocity:Destroy()
+        bodyVelocity = nil
     end
-    if mobileToggleGui then
-        mobileToggleGui.Enabled = visible
-    end
-end
-
--- Функция для переключения между кнопкой N и глазком
-local function switchToEyeButton()
-    if not eyeToggleButton then
-        createEyeToggleButton()
-    end
-    if mobileToggleButton then
-        mobileToggleButton.Visible = false
-    end
-    if eyeToggleButton then
-        eyeToggleButton.Visible = true
-        eyeToggleButton.Position = mobileToggleButton.Position
-    end
-end
-
-local function switchToNButton()
-    if mobileToggleButton then
-        mobileToggleButton.Visible = true
-    end
-    if eyeToggleButton then
-        eyeToggleButton.Visible = false
+    
+    if FLY_ENABLED and LocalPlayer.Character then
+        local root = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if not root then return end
+        
+        -- Создаем управление для мобильных
+        if IS_MOBILE then
+            createMobileFlyControls()
+            toggleMobileFlyControls(true)
+        end
+        
+        bodyVelocity = Instance.new("BodyVelocity")
+        bodyVelocity.Name = "FlyVelocity"
+        bodyVelocity.MaxForce = Vector3.new(40000, 40000, 40000)
+        bodyVelocity.Velocity = Vector3.zero
+        bodyVelocity.Parent = root
+        
+        flyConnection = RunService.RenderStepped:Connect(function()
+            if FLY_ENABLED and root and bodyVelocity then
+                local cam = workspace.CurrentCamera
+                local dir = Vector3.zero
+                
+                if IS_MOBILE then
+                    -- Горизонтальное движение через джойстик
+                    if mobileFlyControls.forward then 
+                        local forwardDir = cam.CFrame.LookVector
+                        dir = dir + Vector3.new(forwardDir.X, 0, forwardDir.Z).Unit
+                    end
+                    if mobileFlyControls.backward then 
+                        local backwardDir = -cam.CFrame.LookVector
+                        dir = dir + Vector3.new(backwardDir.X, 0, backwardDir.Z).Unit
+                    end
+                    if mobileFlyControls.left then 
+                        local leftDir = -cam.CFrame.RightVector
+                        dir = dir + Vector3.new(leftDir.X, 0, leftDir.Z).Unit
+                    end
+                    if mobileFlyControls.right then 
+                        local rightDir = cam.CFrame.RightVector
+                        dir = dir + Vector3.new(rightDir.X, 0, rightDir.Z).Unit
+                    end
+                    
+                    -- Вертикальное движение через стрелки
+                    if mobileFlyControls.up then 
+                        dir = dir + Vector3.new(0, 1, 0) 
+                    end
+                    if mobileFlyControls.down then 
+                        dir = dir + Vector3.new(0, -1, 0) 
+                    end
+                else
+                    -- ПК управление
+                    if flyKeys.W then dir = dir + cam.CFrame.LookVector end
+                    if flyKeys.S then dir = dir - cam.CFrame.LookVector end
+                    if flyKeys.A then dir = dir - cam.CFrame.RightVector end
+                    if flyKeys.D then dir = dir + cam.CFrame.RightVector end
+                    if flyKeys.Up then dir = dir + Vector3.new(0, 1, 0) end
+                    if flyKeys.Down then dir = dir - Vector3.new(0, 1, 0) end
+                end
+                
+                if dir.Magnitude > 0 then
+                    bodyVelocity.Velocity = dir.Unit * currentFlySpeed
+                else
+                    bodyVelocity.Velocity = Vector3.zero
+                end
+            end
+        end)
+    else
+        -- Выключаем управление для мобильных
+        if IS_MOBILE then
+            toggleMobileFlyControls(false)
+            -- Сбрасываем состояние управления
+            for key in pairs(mobileFlyControls) do
+                mobileFlyControls[key] = false
+            end
+        end
+        
+        if bodyVelocity then
+            bodyVelocity:Destroy()
+            bodyVelocity = nil
+        end
     end
 end
     Library:Notify({
@@ -1072,29 +1023,21 @@ local function updateFly()
                 
                 if IS_MOBILE then
                     -- Горизонтальное движение через джойстик
-                    if mobileFlyControls.forward then 
-                        local forwardDir = cam.CFrame.LookVector
-                        dir = dir + Vector3.new(forwardDir.X, 0, forwardDir.Z).Unit
-                    end
-                    if mobileFlyControls.backward then 
-                        local backwardDir = -cam.CFrame.LookVector
-                        dir = dir + Vector3.new(backwardDir.X, 0, backwardDir.Z).Unit
-                    end
-                    if mobileFlyControls.left then 
-                        local leftDir = -cam.CFrame.RightVector
-                        dir = dir + Vector3.new(leftDir.X, 0, leftDir.Z).Unit
-                    end
-                    if mobileFlyControls.right then 
-                        local rightDir = cam.CFrame.RightVector
-                        dir = dir + Vector3.new(rightDir.X, 0, rightDir.Z).Unit
-                    end
+                    if mobileFlyControls.forward then dir = dir + cam.CFrame.LookVector end
+                    if mobileFlyControls.backward then dir = dir - cam.CFrame.LookVector end
+                    if mobileFlyControls.left then dir = dir - cam.CFrame.RightVector end
+                    if mobileFlyControls.right then dir = dir + cam.CFrame.RightVector end
                     
                     -- Вертикальное движение через стрелки
-                    if mobileFlyControls.up then 
-                        dir = dir + Vector3.new(0, 1, 0) 
-                    end
-                    if mobileFlyControls.down then 
-                        dir = dir + Vector3.new(0, -1, 0) 
+                    if mobileFlyControls.up then dir = dir + Vector3.new(0, 1, 0) end
+                    if mobileFlyControls.down then dir = dir - Vector3.new(0, 1, 0) end
+                    
+                    -- Убираем вертикальную составляющую из горизонтального движения
+                    if mobileFlyControls.forward or mobileFlyControls.backward or mobileFlyControls.left or mobileFlyControls.right then
+                        dir = Vector3.new(dir.X, 0, dir.Z).Unit
+                        if dir.Magnitude > 0 then
+                            dir = dir + Vector3.new(0, dir.Y, 0)
+                        end
                     end
                 else
                     -- ПК управление
@@ -1153,7 +1096,6 @@ if IS_DESKTOP then
         handleFlyInput(input, false)
     end)
 end
-
 -- ИСПРАВЛЕННЫЕ функции WalkSpeed и JumpPower
 local function updateWalkSpeed()
     if LocalPlayer.Character then
