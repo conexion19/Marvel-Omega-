@@ -54,7 +54,35 @@ local AUTO_FARM_RETURN_DELAY = 1
 local AUTO_FARM_TELEPORT_DELAY = 0.3
 local AUTO_FARM_CHECK_INTERVAL = 2
 
-local flyKeys = { W = false, A = false, S = false, D = false, Up = false, Down = false }     
+local flyKeys = { W = false, A = false, S = false, D = false, Up = false, Down = false }
+
+-- Функция переключения интерфейса (ДОБАВЛЕНО ПЕРЕД ИСПОЛЬЗОВАНИЕМ)
+local function toggleMobileInterface()
+    if not Library or not Library.Window then return end
+    
+    isMobileInterfaceVisible = not isMobileInterfaceVisible
+    Library.Window.Enabled = isMobileInterfaceVisible
+    
+    -- Обновляем внешний вид кнопки
+    if mobileToggleButton then
+        if isMobileInterfaceVisible then
+            mobileToggleButton.Text = "X"
+            mobileToggleButton.TextColor3 = Color3.fromRGB(255, 50, 50)
+            mobileToggleButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+        else
+            mobileToggleButton.Text = "N"
+            mobileToggleButton.TextColor3 = Color3.fromRGB(255, 255, 0)
+            mobileToggleButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        end
+    end
+    
+    -- Уведомление
+    Library:Notify({
+        Title = "Nexus Mobile",
+        Content = "Interface " .. (isMobileInterfaceVisible and "opened" or "closed"),
+        Duration = 2
+    })
+end
 
 local function createMobileToggleButton()
     if mobileToggleGui then mobileToggleGui:Destroy() end
@@ -178,13 +206,6 @@ local function createMobileToggleButton()
     
     return mobileToggleButton
 end
-    -- Уведомление
-    Library:Notify({
-        Title = "Nexus Mobile",
-        Content = "Interface " .. (isMobileInterfaceVisible and "opened" or "closed"),
-        Duration = 2
-    })
-end
 
 local function initializeMobileInterface()
     if not IS_MOBILE then return end
@@ -203,7 +224,6 @@ local function initializeMobileInterface()
         Duration = 5
     })
 end
-
 -- ESP Folder (создаем только при необходимости)
 local espFolder
 local function getESPFolder()
