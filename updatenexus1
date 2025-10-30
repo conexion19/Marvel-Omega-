@@ -19,8 +19,9 @@ end
 local Players, RunService, Workspace, UIS, TweenService = game:GetService("Players"), game:GetService("RunService"), game:GetService("Workspace"), game:GetService("UserInputService"), game:GetService("TweenService")
 local LocalPlayer = Players.LocalPlayer
 
--- Определяем мобильное устройство
+-- Определяем мобильное устройство (только Phone и PC)
 local IS_MOBILE = (UIS.TouchEnabled and not UIS.KeyboardEnabled)
+local IS_DESKTOP = (UIS.KeyboardEnabled and not UIS.TouchEnabled)
 
 -- Переменные для мобильной кнопки
 local mobileToggleButton, mobileToggleGui, isMobileInterfaceVisible = nil, nil, false
@@ -65,48 +66,39 @@ local function createMobileToggleButton()
     mobileToggleGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     mobileToggleGui.Parent = game:GetService("CoreGui")
     
-    -- Основная кнопка
+    -- Основная кнопка с буквой N
     mobileToggleButton = Instance.new("TextButton")
     mobileToggleButton.Name = "MobileToggleButton"
-    mobileToggleButton.Size = UDim2.new(0, 70, 0, 70)
-    mobileToggleButton.Position = UDim2.new(1, -80, 0.5, -35)
-    mobileToggleButton.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
-    mobileToggleButton.Text = "☰"
+    mobileToggleButton.Size = UDim2.new(0, 60, 0, 60)
+    mobileToggleButton.Position = UDim2.new(1, -70, 0.5, -30)
+    mobileToggleButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    mobileToggleButton.Text = "N"
     mobileToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    mobileToggleButton.Font = Enum.Font.GothamBold
-    mobileToggleButton.TextSize = 30
+    mobileToggleButton.Font = Enum.Font.GothamBlack
+    mobileToggleButton.TextSize = 32
+    mobileToggleButton.TextStrokeTransparency = 0
+    mobileToggleButton.TextStrokeColor3 = Color3.fromRGB(255, 255, 255)
     mobileToggleButton.ZIndex = 100
     mobileToggleButton.Parent = mobileToggleGui
     
-    -- Стилизация кнопки
+    -- Скругленные углы
     local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 35)
+    corner.CornerRadius = UDim.new(0, 12)
     corner.Parent = mobileToggleButton
     
+    -- Белая обводка
     local stroke = Instance.new("UIStroke")
     stroke.Color = Color3.fromRGB(255, 255, 255)
-    stroke.Thickness = 3
+    stroke.Thickness = 2
     stroke.Parent = mobileToggleButton
-    
-    local dropShadow = Instance.new("ImageLabel")
-    dropShadow.Name = "DropShadow"
-    dropShadow.Size = UDim2.new(1, 8, 1, 8)
-    dropShadow.Position = UDim2.new(0, -4, 0, -4)
-    dropShadow.BackgroundTransparency = 1
-    dropShadow.Image = "rbxassetid://6014261993"
-    dropShadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
-    dropShadow.ImageTransparency = 0.7
-    dropShadow.ScaleType = Enum.ScaleType.Slice
-    dropShadow.SliceCenter = Rect.new(49, 49, 450, 450)
-    dropShadow.Parent = mobileToggleButton
     
     -- Анимация при нажатии
     mobileToggleButton.MouseButton1Down:Connect(function()
         if mobileToggleButton then
             local tweenInfo = TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
             local tween = TweenService:Create(mobileToggleButton, tweenInfo, {
-                Size = UDim2.new(0, 65, 0, 65),
-                BackgroundColor3 = Color3.fromRGB(0, 140, 255)
+                Size = UDim2.new(0, 55, 0, 55),
+                BackgroundColor3 = Color3.fromRGB(20, 20, 20)
             })
             tween:Play()
         end
@@ -116,8 +108,8 @@ local function createMobileToggleButton()
         if mobileToggleButton then
             local tweenInfo = TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
             local tween = TweenService:Create(mobileToggleButton, tweenInfo, {
-                Size = UDim2.new(0, 70, 0, 70),
-                BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+                Size = UDim2.new(0, 60, 0, 60),
+                BackgroundColor3 = Color3.fromRGB(0, 0, 0)
             })
             tween:Play()
         end
@@ -140,27 +132,13 @@ local function toggleMobileInterface()
     -- Обновляем внешний вид кнопки
     if mobileToggleButton then
         if isMobileInterfaceVisible then
-            mobileToggleButton.Text = "✕"
-            mobileToggleButton.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
-            
-            -- Анимация при открытии
-            local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-            local tween = TweenService:Create(mobileToggleButton, tweenInfo, {
-                Rotation = 0,
-                BackgroundColor3 = Color3.fromRGB(255, 80, 80)
-            })
-            tween:Play()
+            mobileToggleButton.Text = "N"
+            mobileToggleButton.TextColor3 = Color3.fromRGB(255, 50, 50)
+            mobileToggleButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
         else
-            mobileToggleButton.Text = "☰"
-            mobileToggleButton.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
-            
-            -- Анимация при закрытии
-            local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-            local tween = TweenService:Create(mobileToggleButton, tweenInfo, {
-                Rotation = 0,
-                BackgroundColor3 = Color3.fromRGB(0, 170, 255)
-            })
-            tween:Play()
+            mobileToggleButton.Text = "N"
+            mobileToggleButton.TextColor3 = Color3.fromRGB(255, 255, 0)
+            mobileToggleButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
         end
     end
     
@@ -185,10 +163,11 @@ local function initializeMobileInterface()
     
     Library:Notify({
         Title = "Nexus Mobile",
-        Content = "Tap the blue button to open interface",
+        Content = "Tap the N button to open interface",
         Duration = 5
     })
 end
+
 -- ESP Folder (создаем только при необходимости)
 local espFolder
 local function getESPFolder()
@@ -790,11 +769,14 @@ local function initializeGUI()
     if _G.NexusGUIInitialized then return end
     _G.NexusGUIInitialized = true
     
+    -- Определяем размер окна в зависимости от устройства
+    local windowSize = IS_MOBILE and UDim2.fromOffset(450, 310) or UDim2.fromOffset(500, 310)
+    
     local Window = Library:CreateWindow({
         Title = "Nexus v1.0.0",
         SubTitle = "🍁",
         TabWidth = 100,
-        Size = UDim2.fromOffset(500, 310),
+        Size = windowSize,
         Acrylic = false,
         Theme = "Dark",
         MinimizeKey = Enum.KeyCode.LeftAlt
@@ -1097,7 +1079,7 @@ local function initializeGUI()
     if IS_MOBILE then
         Library:Notify({
             Title = "Nexus Mobile",
-            Content = "Interface loaded! Tap the blue button to open.",
+            Content = "Interface loaded! Tap the N button to open.",
             Duration = 5
         })
     else
@@ -1157,7 +1139,7 @@ local function fullInitialization()
         
         print("Nexus Loaded - Ready to use")
         if IS_MOBILE then
-            print("Mobile interface with toggle button activated")
+            print("Mobile interface with N button activated")
         else
             print("PC interface activated")
         end
