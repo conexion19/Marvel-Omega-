@@ -219,19 +219,19 @@ local function createMobileToggleButton()
     mobileToggleGui.Parent = game:GetService("CoreGui")
     
     -- Основная кнопка с буквой N (менее жирная)
-mobileToggleButton = Instance.new("TextButton")
-mobileToggleButton.Name = "MobileToggleButton"
-mobileToggleButton.Size = UDim2.new(0, 60, 0, 60)
-mobileToggleButton.Position = UDim2.new(1, -70, 0.5, -30)
-mobileToggleButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-mobileToggleButton.Text = "N"
-mobileToggleButton.TextColor3 = Color3.fromRGB(255, 255,255)
-mobileToggleButton.Font = Enum.Font.GothamBold  -- Менее жирный чем GothamBlack
-mobileToggleButton.TextSize = 32
-mobileToggleButton.TextStrokeTransparency = 0.5  -- Полупрозрачная обводка
-mobileToggleButton.TextStrokeColor3 = Color3.fromRGB(255, 255, 255)
-mobileToggleButton.ZIndex = 100
-mobileToggleButton.Parent = mobileToggleGui
+    mobileToggleButton = Instance.new("TextButton")
+    mobileToggleButton.Name = "MobileToggleButton"
+    mobileToggleButton.Size = UDim2.new(0, 60, 0, 60)
+    mobileToggleButton.Position = UDim2.new(1, -70, 0.5, -30)
+    mobileToggleButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    mobileToggleButton.Text = "N"
+    mobileToggleButton.TextColor3 = Color3.fromRGB(255, 255,255)
+    mobileToggleButton.Font = Enum.Font.GothamBold  -- Менее жирный чем GothamBlack
+    mobileToggleButton.TextSize = 32
+    mobileToggleButton.TextStrokeTransparency = 0.5  -- Полупрозрачная обводка
+    mobileToggleButton.TextStrokeColor3 = Color3.fromRGB(255, 255, 255)
+    mobileToggleButton.ZIndex = 100
+    mobileToggleButton.Parent = mobileToggleGui
     
     -- Скругленные углы
     local corner = Instance.new("UICorner")
@@ -349,6 +349,7 @@ local function initializeMobileInterface()
         Duration = 5
     })
 end
+
 -- ESP Folder (создаем только при необходимости)
 local espFolder
 local function getESPFolder()
@@ -945,6 +946,7 @@ if IS_DESKTOP then
         handleFlyInput(input, false)
     end)
 end
+
 -- ИСПРАВЛЕННЫЕ функции WalkSpeed и JumpPower
 local function updateWalkSpeed()
     if LocalPlayer.Character then
@@ -972,35 +974,13 @@ local function updateJumpPower()
     end
 end
 
--- Input handling
-local function handleFlyInput(input, isBeginning)
-    if not FLY_ENABLED then return end
-    
-    local key = input.KeyCode
-    if key == Enum.KeyCode.W then flyKeys.W = isBeginning
-    elseif key == Enum.KeyCode.A then flyKeys.A = isBeginning
-    elseif key == Enum.KeyCode.S then flyKeys.S = isBeginning
-    elseif key == Enum.KeyCode.D then flyKeys.D = isBeginning
-    elseif key == Enum.KeyCode.Space then flyKeys.Up = isBeginning
-    elseif key == Enum.KeyCode.LeftShift then flyKeys.Down = isBeginning end
-end
-
-UIS.InputBegan:Connect(function(input, gameProcessed)
-    if gameProcessed then return end
-    handleFlyInput(input, true)
-end)
-
-UIS.InputEnded:Connect(function(input)
-    handleFlyInput(input, false)
-end)
-
 -- Ускоренная инициализация GUI
 local function initializeGUI()
     if _G.NexusGUIInitialized then return end
     _G.NexusGUIInitialized = true
     
     -- Определяем размер окна в зависимости от устройства
-    local windowSize = IS_MOBILE and UDim2.fromOffset(450, 270) or UDim2.fromOffset(500, 310)
+    local windowSize = IS_MOBILE and UDim2.fromOffset(400, 300) or UDim2.fromOffset(500, 310)
     
     local Window = Library:CreateWindow({
         Title = "Nexus v1.0.0",
@@ -1042,21 +1022,25 @@ local function initializeGUI()
     })
     
     HitboxToggle:OnChanged(function() 
-        le.toggleState(Options.HitboxExpander.Value) 
+        if le and le.toggleState then
+            le.toggleState(Options.HitboxExpander.Value) 
+        end
     end)
 
     Tabs.legit:CreateSlider("HitboxSize", {
         Title = "Hitbox Size",
         Description = "Hitbox size (5-50)",
-        Default = le.LIMB_SIZE or 10,
+        Default = le and le.LIMB_SIZE or 10,
         Min = 5,
         Max = 50,
         Rounding = 1,
         Callback = function(value)
-            le.LIMB_SIZE = value
-            if Options.HitboxExpander.Value then 
-                le.toggleState(false)
-                le.toggleState(true)
+            if le then
+                le.LIMB_SIZE = value
+                if Options.HitboxExpander.Value and le.toggleState then 
+                    le.toggleState(false)
+                    le.toggleState(true)
+                end
             end
         end
     })
@@ -1064,29 +1048,33 @@ local function initializeGUI()
     Tabs.legit:CreateSlider("HitboxTransparency", {
         Title = "Hitbox Transparency",
         Description = "Hitbox transparency",
-        Default = le.LIMB_TRANSPARENCY or 0.5,
+        Default = le and le.LIMB_TRANSPARENCY or 0.5,
         Min = 0,
         Max = 1,
         Rounding = 2,
         Callback = function(value)
-            le.LIMB_TRANSPARENCY = value
-            if Options.HitboxExpander.Value then 
-                le.toggleState(false)
-                le.toggleState(true)
+            if le then
+                le.LIMB_TRANSPARENCY = value
+                if Options.HitboxExpander.Value and le.toggleState then 
+                    le.toggleState(false)
+                    le.toggleState(true)
+                end
             end
         end
     })
 
     local CollisionToggle = Tabs.legit:CreateToggle("LimbCollisions", {
         Title = "Limb Collisions",
-        Default = le.LIMB_CAN_COLLIDE or false
+        Default = le and le.LIMB_CAN_COLLIDE or false
     })
     
     CollisionToggle:OnChanged(function()
-        le.LIMB_CAN_COLLIDE = Options.LimbCollisions.Value
-        if Options.HitboxExpander.Value then 
-            le.toggleState(false)
-            le.toggleState(true)
+        if le then
+            le.LIMB_CAN_COLLIDE = Options.LimbCollisions.Value
+            if Options.HitboxExpander.Value and le.toggleState then 
+                le.toggleState(false)
+                le.toggleState(true)
+            end
         end
     end)
 
@@ -1094,21 +1082,23 @@ local function initializeGUI()
         Title = "Target Limb",
         Description = "Select body part to expand",
         Values = limbs,
-        Default = le.TARGET_LIMB or "HumanoidRootPart",
+        Default = le and le.TARGET_LIMB or "HumanoidRootPart",
         Multi = false,
         Callback = function(value)
-            le.TARGET_LIMB = value
-            if Options.HitboxExpander.Value then 
-                le.toggleState(false)
-                le.toggleState(true)
+            if le then
+                le.TARGET_LIMB = value
+                if Options.HitboxExpander.Value and le.toggleState then 
+                    le.toggleState(false)
+                    le.toggleState(true)
+                end
             end
         end
     })
 
     if #limbs > 0 then
         Options.TargetLimb:SetValues(limbs)
-        if not table.find(limbs, le.TARGET_LIMB) then
-            le.TARGET_LIMB = "HumanoidRootPart"
+        if not table.find(limbs, le and le.TARGET_LIMB or "HumanoidRootPart") then
+            if le then le.TARGET_LIMB = "HumanoidRootPart" end
             Options.TargetLimb:SetValue("HumanoidRootPart")
         end
     end
